@@ -11,7 +11,7 @@ RUN npm install --omit=dev
 
 COPY . .
 
-RUN mkdir -p /app/public/reels /app/tmp
+RUN mkdir -p /app/public/reels
 
 EXPOSE 3000
 

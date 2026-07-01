@@ -1,7 +1,7 @@
 {
-  "name": "reels-engine-leve-otimizado",
-  "version": "2.1.0",
-  "description": "Motor leve multimarcas para gerar Reels verticais com baixo consumo de CPU.",
+  "name": "reels-engine-pro-v3",
+  "version": "3.0.0",
+  "description": "API profissional multimarcas para gerar Reels de ofertas com visual limpo e CTA legível.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

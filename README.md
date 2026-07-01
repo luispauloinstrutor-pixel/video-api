@@ -1,26 +1,21 @@
-# Reels Engine Leve — v2.1
+# Reels Engine Pro v3
 
-Versão otimizada para não travar a VPS.
-
-Mudanças:
-- Remove `zoompan` pesado.
-- Usa `-preset veryfast`.
-- Usa `-crf 28`.
-- Renderiza em 24 FPS.
-- Duração limitada entre 5 e 10 segundos.
-- Mantém marca dinâmica pelo n8n.
-- Mantém CTA: `ID 680`.
+Visual novo:
+- Informações sobem para o centro.
+- CTA maior e legível.
+- Produto com mais espaço.
+- Rodapé por `brand_banner_url`.
+- Marca não fica fixa na API.
+- Endpoint para apagar vídeos: DELETE /reels.
 
 ## POST /create-reel
 
 Header:
-
 ```txt
 x-api-key: acheidahora123
 ```
 
 Body:
-
 ```json
 {
   "produto_id": "680",
@@ -35,7 +30,12 @@ Body:
   "primary_color": "yellow",
   "accent_color": "red",
   "bg_color": "black",
+  "panel_color": "black",
   "text_color": "white",
   "duration": 8
 }
 ```
+
+## DELETE /reels
+
+Apaga todos os MP4 gerados.
