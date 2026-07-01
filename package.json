@@ -1,0 +1,15 @@
+{
+  "name": "media-service-achei-da-hora",
+  "version": "1.0.0",
+  "description": "API para gerar vídeos MP4 verticais para Reels a partir de ofertas.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.3",
+    "fs-extra": "^11.2.0",
+    "uuid": "^9.0.1"
+  }
+}
