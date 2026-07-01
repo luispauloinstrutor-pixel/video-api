@@ -1,41 +1,38 @@
-# Reels Engine Pro v3
+# Reels Engine Pro v4
 
-Visual novo:
-- Informações sobem para o centro.
-- CTA maior e legível.
-- Produto com mais espaço.
-- Rodapé por `brand_banner_url`.
-- Marca não fica fixa na API.
-- Endpoint para apagar vídeos: DELETE /reels.
+Correções:
+- Remove duplicidade de "COMENTE".
+- CTA agora sempre fica:
+  COMENTE
+  ID 347
+- Layout mais limpo.
+- Card de preço/CTA mais alto e legível.
+- Menos cara de script automático.
+- Marca continua dinâmica pelo n8n.
+- Rodapé pode vir por `brand_banner_url`.
 
-## POST /create-reel
+## Body recomendado
 
-Header:
-```txt
-x-api-key: acheidahora123
-```
-
-Body:
 ```json
 {
-  "produto_id": "680",
+  "produto_id": "347",
   "image_url": "https://...",
-  "preco": "POR R$ 29,90",
-  "preco_original_text": "DE R$ 34,97",
-  "comentario": "ID 680",
-  "desconto": "14% OFF",
+  "preco": "POR R$ 169,00",
+  "preco_original_text": "DE R$ 229,00",
+  "comentario": "ID 347",
+  "desconto": "26% OFF",
   "brand_name": "Radar de Ofertas",
-  "brand_badge": "MAIS VENDIDO",
+  "brand_badge": "OFERTA DO DIA",
   "brand_banner_url": "https://url-publica-do-rodape.png",
   "primary_color": "yellow",
   "accent_color": "red",
   "bg_color": "black",
-  "panel_color": "black",
+  "panel_color": "0x111111",
   "text_color": "white",
   "duration": 8
 }
 ```
 
-## DELETE /reels
+## Limpeza
 
-Apaga todos os MP4 gerados.
+`DELETE /reels` apaga todos os MP4.
