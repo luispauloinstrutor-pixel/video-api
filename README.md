@@ -1,57 +1,41 @@
-# Reels Engine — Achei da Hora / Radar de Ofertas
+# Reels Engine Leve — v2.1
 
-Motor multimarcas para gerar Reels, Shorts e vídeos verticais.
+Versão otimizada para não travar a VPS.
 
-## Endpoints
+Mudanças:
+- Remove `zoompan` pesado.
+- Usa `-preset veryfast`.
+- Usa `-crf 28`.
+- Renderiza em 24 FPS.
+- Duração limitada entre 5 e 10 segundos.
+- Mantém marca dinâmica pelo n8n.
+- Mantém CTA: `ID 680`.
 
-### GET /health
+## POST /create-reel
 
-### GET /templates
+Header:
 
-### POST /create-reel
-
-Headers:
 ```txt
 x-api-key: acheidahora123
 ```
 
-Body exemplo:
+Body:
 
 ```json
 {
   "produto_id": "680",
-  "image_url": "https://http2.mlstatic.com/...",
+  "image_url": "https://...",
   "preco": "POR R$ 29,90",
   "preco_original_text": "DE R$ 34,97",
   "comentario": "ID 680",
   "desconto": "14% OFF",
-  "template": "premium",
   "brand_name": "Radar de Ofertas",
-  "brand_badge": "OFERTA RELÂMPAGO",
+  "brand_badge": "MAIS VENDIDO",
+  "brand_banner_url": "https://url-publica-do-rodape.png",
   "primary_color": "yellow",
   "accent_color": "red",
   "bg_color": "black",
-  "text_color": "white"
+  "text_color": "white",
+  "duration": 8
 }
 ```
-
-Com banner da marca:
-
-```json
-{
-  "produto_id": "680",
-  "image_url": "https://http2.mlstatic.com/...",
-  "preco": "POR R$ 29,90",
-  "comentario": "ID 680",
-  "desconto": "14% OFF",
-  "template": "premium",
-  "brand_name": "Achei da Hora",
-  "brand_banner_url": "https://sua-url-publica/banner.png"
-}
-```
-
-Templates:
-- premium
-- mercadolivre
-- dark
-- shopee
