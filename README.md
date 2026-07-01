@@ -1,17 +1,19 @@
-# Media Service — Achei da Hora
+# Reels Engine — Achei da Hora / Radar de Ofertas
 
-API para gerar vídeo MP4 vertical para Instagram Reels usando FFmpeg.
+Motor multimarcas para gerar Reels, Shorts e vídeos verticais.
 
 ## Endpoints
 
 ### GET /health
-Testa se a API está online.
+
+### GET /templates
 
 ### POST /create-reel
-Cria um MP4 e retorna `video_url`.
 
 Headers:
-- `x-api-key: SUA_CHAVE` se você configurar API_KEY.
+```txt
+x-api-key: acheidahora123
+```
 
 Body exemplo:
 
@@ -19,29 +21,37 @@ Body exemplo:
 {
   "produto_id": "680",
   "image_url": "https://http2.mlstatic.com/...",
-  "titulo": "Produto teste",
   "preco": "POR R$ 29,90",
-  "comentario": "COMENTE 680",
-  "desconto": "14% OFF"
+  "preco_original_text": "DE R$ 34,97",
+  "comentario": "ID 680",
+  "desconto": "14% OFF",
+  "template": "premium",
+  "brand_name": "Radar de Ofertas",
+  "brand_badge": "OFERTA RELÂMPAGO",
+  "primary_color": "yellow",
+  "accent_color": "red",
+  "bg_color": "black",
+  "text_color": "white"
 }
 ```
 
-Resposta:
+Com banner da marca:
 
 ```json
 {
-  "ok": true,
   "produto_id": "680",
-  "video_url": "https://seu-dominio.com/reels/oferta_680_123.mp4"
+  "image_url": "https://http2.mlstatic.com/...",
+  "preco": "POR R$ 29,90",
+  "comentario": "ID 680",
+  "desconto": "14% OFF",
+  "template": "premium",
+  "brand_name": "Achei da Hora",
+  "brand_banner_url": "https://sua-url-publica/banner.png"
 }
 ```
 
-## Variáveis de ambiente
-
-```env
-PORT=3000
-PUBLIC_BASE_URL=https://seu-dominio.com
-API_KEY=sua-chave-secreta
-OUTPUT_DIR=/app/public/reels
-TMP_DIR=/app/tmp
-```
+Templates:
+- premium
+- mercadolivre
+- dark
+- shopee
