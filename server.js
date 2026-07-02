@@ -11,9 +11,10 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, '');
 const API_KEY = process.env.API_KEY || '';
 const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'reels');
+const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
-const SERVICE_NAME = 'reels-engine-elegant';
-const VERSION = '9.1.0';
+const SERVICE_NAME = 'reels-engine-pro';
+const VERSION = '10.0.0';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -21,12 +22,18 @@ const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
 let activeFFmpegJobs = 0;
 
 fs.ensureDirSync(OUTPUT_DIR);
+fs.ensureDirSync(ASSETS_DIR);
 
 app.disable('x-powered-by');
 app.use(cors());
 app.use(express.json({ limit: '3mb' }));
 
 app.use('/reels', express.static(OUTPUT_DIR, {
+  maxAge: '7d',
+  immutable: true
+}));
+
+app.use('/assets', express.static(ASSETS_DIR, {
   maxAge: '7d',
   immutable: true
 }));
@@ -131,6 +138,18 @@ function fontSizeForPrice(price) {
   if (len >= 12) return 88;
 
   return 102;
+}
+
+function fontSizeForAcheiStoryPrice(price) {
+  const len = String(price || '').length;
+
+  if (len >= 24) return 70;
+  if (len >= 21) return 78;
+  if (len >= 18) return 86;
+  if (len >= 15) return 94;
+  if (len >= 12) return 104;
+
+  return 114;
 }
 
 function normalizeDiscount(value) {
@@ -418,7 +437,110 @@ function buildElegantFilter(data, hasBanner) {
   return filters.join(';');
 }
 
+function buildAcheiStoryFilter(data) {
+  const productBoxX = 216;
+  const productBoxY = 426;
+  const productBoxW = 648;
+  const productBoxH = 610;
+
+  const titleLines = splitTextLines(data.titulo || data.title || '', 24, 2)
+    .map(line => ffText(line, 32).toUpperCase());
+
+  const priceRaw = cleanText(data.preco || data.price || '', 42);
+  const price = ffText(priceRaw, 42);
+
+  const oldRaw = cleanText(data.preco_original_text || data.preco_original || '', 38).toUpperCase();
+  const oldPrice = ffText(oldRaw, 38).toUpperCase();
+
+  const discountRaw =
+    normalizeDiscount(
+      data.desconto ||
+      data.discount ||
+      data.desconto_text ||
+      data.discount_text ||
+      ''
+    ) || calculateDiscountText(oldRaw, priceRaw);
+
+  const discount = ffText(discountRaw, 24).toUpperCase();
+  const idNumber = ffText(extractId(data.comentario, data.produto_id), 14);
+
+  const priceFontSize = fontSizeForAcheiStoryPrice(priceRaw);
+  const draws = [];
+
+  if (discount) {
+    draws.push(
+      `drawtext=text='${discount}':fontcolor=black:fontsize=52:x=96+(318-text_w)/2:y=1108:expansion=none`
+    );
+  }
+
+  if (titleLines[0]) {
+    draws.push(
+      `drawtext=text='${titleLines[0]}':fontcolor=white:fontsize=39:x=443:y=1088:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none`
+    );
+  }
+
+  if (titleLines[1]) {
+    draws.push(
+      `drawtext=text='${titleLines[1]}':fontcolor=white:fontsize=39:x=443:y=1132:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none`
+    );
+  }
+
+  if (oldPrice) {
+    draws.push(
+      `drawtext=text='${oldPrice}':fontcolor=white:fontsize=44:x=178:y=1218:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none`
+    );
+  }
+
+  if (price) {
+    draws.push(
+      `drawtext=text='${price}':fontcolor=0xFFE600:fontsize=${priceFontSize}:x=(w-text_w)/2:y=1290:shadowcolor=black@0.85:shadowx=3:shadowy=3:expansion=none`
+    );
+  }
+
+  draws.push(
+    `drawtext=text='${idNumber}':fontcolor=black:fontsize=92:x=655+(160-text_w)/2:y=1442:expansion=none`
+  );
+
+  return [
+    `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,format=rgba[base]`,
+
+    `[1:v]scale=${productBoxW}:${productBoxH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
+
+    `[base]drawbox=x=${productBoxX}:y=${productBoxY}:w=${productBoxW}:h=${productBoxH}:color=white@1:t=fill[base2]`,
+
+    `[base2][prod]overlay=x=${productBoxX}+(${productBoxW}-w)/2:y=${productBoxY}+(${productBoxH}-h)/2:shortest=1[stage1]`,
+
+    `[stage1]${draws.join(',')},format=yuv420p[out]`
+  ].join(';');
+}
+
+async function buildAcheiStoryReel(data, outPath) {
+  const filter = buildAcheiStoryFilter(data);
+
+  const args = [
+    '-y',
+
+    '-loop', '1',
+    '-t', String(data.duration),
+    '-i', data.template_url,
+
+    '-loop', '1',
+    '-t', String(data.duration),
+    '-i', data.image_url,
+
+    '-filter_complex', filter,
+    '-map', '[out]',
+    ...outputArgs(outPath)
+  ];
+
+  await ffmpeg(args);
+}
+
 async function buildReel(data, outPath) {
+  if (data.layout === 'achei_story') {
+    return buildAcheiStoryReel(data, outPath);
+  }
+
   const hasBanner = Boolean(data.brand_banner_url);
   const filter = buildElegantFilter(data, hasBanner);
 
@@ -454,6 +576,8 @@ app.get('/health', (req, res) => {
     version: VERSION,
     public_base_url: PUBLIC_BASE_URL,
     output_dir: OUTPUT_DIR,
+    assets_dir: ASSETS_DIR,
+    template_url: PUBLIC_BASE_URL ? `${PUBLIC_BASE_URL}/assets/achei-story-base.png` : '',
     active_jobs: activeFFmpegJobs,
     max_jobs: MAX_FFMPEG_JOBS
   });
@@ -480,23 +604,39 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       });
     }
 
+    const layout = cleanText(body.layout || 'elegant', 30);
     const imageUrl = validateUrl(body.image_url, 'IMAGE_URL');
 
     const bannerUrl = body.brand_banner_url
       ? validateUrl(body.brand_banner_url, 'BRAND_BANNER_URL')
       : '';
 
+    const templateUrl = layout === 'achei_story'
+      ? (
+          body.template_url
+            ? validateUrl(body.template_url, 'TEMPLATE_URL')
+            : `${PUBLIC_BASE_URL}/assets/achei-story-base.png`
+        )
+      : (
+          body.template_url
+            ? validateUrl(body.template_url, 'TEMPLATE_URL')
+            : ''
+        );
+
     const produtoId = safeId(body.produto_id);
     const duration = Math.max(6, Math.min(Number(body.duration || 8), 10));
+    const safeLayout = safeId(layout);
 
-    const fileName = `elegant_${produtoId}_${Date.now()}.mp4`;
+    const fileName = `${safeLayout}_${produtoId}_${Date.now()}.mp4`;
     const outPath = path.join(OUTPUT_DIR, fileName);
 
     const data = {
       ...body,
 
+      layout,
       image_url: imageUrl,
       brand_banner_url: bannerUrl,
+      template_url: templateUrl,
 
       produto_id: produtoId,
       duration,
@@ -515,7 +655,7 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
     };
 
     console.log(
-      `[create-reel] start id=${produtoId} banner=${Boolean(data.brand_banner_url)} duration=${duration}`
+      `[create-reel] start layout=${layout} id=${produtoId} banner=${Boolean(data.brand_banner_url)} template=${Boolean(data.template_url)} duration=${duration}`
     );
 
     await buildReel(data, outPath);
@@ -525,6 +665,7 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
     res.json({
       ok: true,
       produto_id: produtoId,
+      layout,
       video_url: videoUrl,
       filename: fileName,
       elapsed_ms: Date.now() - start
