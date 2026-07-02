@@ -301,10 +301,10 @@ function buildElegantFilter(data, hasBanner) {
 
   cardDraws.push(
     `drawtext=text='${price}':fontcolor=${primary}:fontsize=${priceFontSize}:x=(w-text_w)/2:y=${cardY + 330}:shadowcolor=black@0.85:shadowx=3:shadowy=3`,
-    `drawtext=text='COMENTE O ID':fontcolor=${text}:fontsize=42:x=(w-text_w)/2:y=${cardY + 462}:shadowcolor=black@0.80:shadowx=2:shadowy=2`,
+    `drawtext=text='COMENTE':fontcolor=${text}:fontsize=42:x=(w-text_w)/2:y=${cardY + 462}:shadowcolor=black@0.80:shadowx=2:shadowy=2`,
     `drawbox=x=230:y=${cardY + 522}:w=620:h=112:color=${primary}@1:t=fill`,
     `drawtext=text='ID ${idNumber}':fontcolor=black:fontsize=70:x=(w-text_w)/2:y=${cardY + 548}`,
-    `drawtext=text='RECEBA O LINK NO DIRECT':fontcolor=${text}:fontsize=34:x=(w-text_w)/2:y=${cardY + 655}:shadowcolor=black@0.78:shadowx=2:shadowy=2`
+    `drawtext=text='QUE TE MANDO O LINK NO DIRECT':fontcolor=${text}:fontsize=34:x=(w-text_w)/2:y=${cardY + 655}:shadowcolor=black@0.78:shadowx=2:shadowy=2`
   );
 
   const filters = [
