@@ -14,7 +14,7 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'ree
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
 const SERVICE_NAME = 'reels-engine-pro';
-const VERSION = '10.0.3';
+const VERSION = '10.0.4';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -527,12 +527,17 @@ function buildAcheiStoryFilter(data) {
 async function buildAcheiStoryReel(data, outPath) {
   const filter = buildAcheiStoryFilter(data);
 
+  const localTemplatePath = path.join(ASSETS_DIR, 'achei-story-base.png');
+  const templateInput = fs.existsSync(localTemplatePath)
+    ? localTemplatePath
+    : data.template_url;
+
   const args = [
     '-y',
 
     '-loop', '1',
     '-t', String(data.duration),
-    '-i', data.template_url,
+    '-i', templateInput,
 
     '-loop', '1',
     '-t', String(data.duration),
@@ -693,12 +698,15 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       elapsed_ms: Date.now() - start
     });
   } catch (err) {
-    console.error('[create-reel] error', err.message, err.stderr || '');
+    const stderrText = String(err.stderr || '').slice(-4000);
+
+    console.error('[create-reel] error', err.message, stderrText);
 
     res.status(err.statusCode || 500).json({
       ok: false,
       error: err.publicCode || 'VIDEO_CREATION_FAILED',
       message: err.statusCode ? err.message : 'Falha ao criar vídeo.',
+      ffmpeg_error: stderrText,
       elapsed_ms: Date.now() - start
     });
   } finally {
