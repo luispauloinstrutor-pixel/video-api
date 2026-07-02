@@ -23,11 +23,11 @@ const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
 
 let activeFFmpegJobs = 0;
 
-// Inicialização do ambiente
+// Inicialização do diretório de saída
 fs.ensureDirSync(OUTPUT_DIR);
 
 // ==========================================
-// MIDDLEWARES DE CONFIGURAÇÃO
+// MIDDLEWARES E ESTÁTICOS
 // ==========================================
 app.disable('x-powered-by');
 app.use(cors());
@@ -38,7 +38,7 @@ app.use('/reels', express.static(OUTPUT_DIR, {
   immutable: true
 }));
 
-// Middlewares de Segurança
+// Middleware de Autenticação
 function requireApiKey(req, res, next) {
   if (!API_KEY) return next();
 
@@ -52,7 +52,7 @@ function requireApiKey(req, res, next) {
 }
 
 // ==========================================
-// GERENCIADOR DE FILA (JOBS)
+// GERENCIADOR DE CONCORRÊNCIA (JOBS)
 // ==========================================
 function acquireJobSlot() {
   if (activeFFmpegJobs >= MAX_FFMPEG_JOBS) return false;
@@ -65,7 +65,7 @@ function releaseJobSlot() {
 }
 
 // ==========================================
-// FUNÇÕES UTILITÁRIAS DE TRATAMENTO
+// TRATAMENTO DE TEXTOS E PARAMETROS
 // ==========================================
 function cleanText(value, max = 90) {
   return String(value || '')
@@ -149,7 +149,7 @@ function validateUrl(value, fieldName) {
 }
 
 // ==========================================
-// MOTOR DE FILTROS E CORAÇÃO FFmpeg
+// PROCESSO DO FFmpeg (CONVERSÃO DE VÍDEO)
 // ==========================================
 function ffmpeg(args) {
   return new Promise((resolve, reject) => {
@@ -187,18 +187,18 @@ function outputArgs(outPath) {
 function buildProfessionalFilter(data, hasBanner) {
   const duration = Number(data.duration || 8);
 
-  // Mapeamento de Paleta de Cores
-  const bg = color(data.bg_color, '0x050505');
-  const yellow = color(data.primary_color, '0xFFE600');
-  const goldSoft = color(data.secondary_color, '0xD6B84A');
-  const accent = color(data.accent_color, '0xD92525');
+  // Paleta de Cores Otimizada para Alta Conversão
+  const bg = color(data.bg_color, '0x0A0A0C');          
+  const yellow = color(data.primary_color, '0xFFE600');  
+  const goldSoft = color(data.secondary_color, '0x1F1F24'); 
+  const accent = color(data.accent_color, '0xFA2A46');    
   const text = color(data.text_color, 'white');
-  const muted = color(data.muted_color, '0xBEBEBE');
-  const card = color(data.panel_color, '0x101010');
+  const muted = color(data.muted_color, '0xA0A0AB');     
+  const card = color(data.panel_color, '0x121216');      
 
-  // Tratamento de Textos
+  // Tratamento Textual de Alto Impacto
   const brand = ffText(data.brand_name || 'ACHEI DA HORA', 34).toUpperCase();
-  const badge = ffText(data.brand_badge || 'OFERTA ESPECIAL', 30).toUpperCase();
+  const badge = ffText(data.brand_badge || 'OFERTA IMPERDÍVEL', 30).toUpperCase();
   const priceRaw = cleanText(data.preco || data.price || 'OFERTA ESPECIAL', 42).toUpperCase();
   const price = ffText(priceRaw, 42);
   const old = ffText(data.preco_original_text || data.preco_original || '', 38).toUpperCase();
@@ -206,73 +206,82 @@ function buildProfessionalFilter(data, hasBanner) {
   const idNumber = ffText(extractId(data.comentario, data.produto_id), 14);
   const priceFontSize = fontSizeForPrice(priceRaw);
 
-  // Posicionamento Dinâmico de Elementos
-  const productMaxH = hasBanner ? 800 : 870;
-  const productY = hasBanner ? 200 : 210;
-  const cardY = hasBanner ? 1040 : 1100;
-  const cardH = hasBanner ? 650 : 660;
-  const commentY = hasBanner ? 1458 : 1520;
-  const idBoxY = hasBanner ? 1518 : 1582;
-  const subY = hasBanner ? 1660 : 1727;
-  const footerY = hasBanner ? 1715 : 1850;
+  // Dimensionamento Vertical Seguro (Evita cortes nas interfaces das redes sociais)
+  const productMaxH = hasBanner ? 780 : 840;
+  const productY = hasBanner ? 210 : 230;
+  const cardY = hasBanner ? 1060 : 1120;
+  const cardH = hasBanner ? 630 : 640;
+  
+  const commentY = hasBanner ? 1445 : 1500;
+  const idBoxY = hasBanner ? 1505 : 1565;
+  const subY = hasBanner ? 1655 : 1715;
+  const footerY = hasBanner ? 1720 : 1835;
   const bannerY = 1760;
 
-  // Renderização condicional de sub-filtros de string
+  // Sub-filtros Condicionais Otimizados
   const discountFilter = discount
-    ? `drawbox=x=716:y=${cardY + 34}:w=266:h=70:color=${accent}@0.96:t=fill,` +
-      `drawtext=text='${discount}':fontcolor=white:fontsize=36:x=716+(266-text_w)/2:y=${cardY + 53}:shadowcolor=black@0.40:shadowx=2:shadowy=2,`
+    ? `drawbox=x=720:y=${cardY + 35}:w=250:h=65:color=${accent}@1:t=fill,` +
+      `drawtext=text='${discount}':fontcolor=white:fontsize=34:x=720+(250-text_w)/2:y=${cardY + 51}:fontfile=Arial:style=Bold,`
     : '';
 
   const oldPriceFilter = old
-    ? `drawtext=text='${old}':fontcolor=${muted}:fontsize=33:x=(w-text_w)/2:y=${cardY + 136}:shadowcolor=black@0.65:shadowx=2:shadowy=2,`
+    ? `drawtext=text='${old}':fontcolor=${muted}:fontsize=32:x=(w-text_w)/2:y=${cardY + 130}:shadowcolor=black@0.50:shadowx=1:shadowy=1,` +
+      `drawbox=x=(w-200)/2:y=${cardY + 148}:w=200:h=3:color=${accent}@0.85:t=fill,`
     : '';
 
   const filters = [
+    // 1. Estilização do Fundo Premium (Efeito Cinema)
     `[0:v]split=2[bgsrc][prodsrc]`,
-    `[bgsrc]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=luma_radius=26:luma_power=2,eq=brightness=-0.40:saturation=1.08:contrast=1.10[bgblur]`,
-    `[prodsrc]scale=940:${productMaxH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
-    `color=c=${yellow}@0.08:s=1260x56:d=${duration},format=rgba,rotate=-0.10:c=none:ow=rotw(-0.10):oh=roth(-0.10)[line1]`,
-    `color=c=white@0.045:s=1180x34:d=${duration},format=rgba,rotate=-0.10:c=none:ow=rotw(-0.10):oh=roth(-0.10)[line2]`,
+    `[bgsrc]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=luma_radius=35:luma_power=3,eq=brightness=-0.45:saturation=1.15:contrast=1.15[bgblur]`,
+    `[prodsrc]scale=920:${productMaxH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
+    
     hasBanner ? `[1:v]scale=1080:-1:force_original_aspect_ratio=increase,crop=1080:min(150\\,ih):0:0[banner]` : null,
     
-    `[bgblur][line1]overlay=x=-120:y=188:shortest=1[bg1]`,
-    `[bg1][line2]overlay=x=-90:y=302:shortest=1[bg2]`,
-    `[bg2]drawbox=x=0:y=0:w=1080:h=1920:color=${bg}@0.42:t=fill[base0]`,
+    `[bgblur]drawbox=x=0:y=0:w=1080:h=1920:color=${bg}@0.50:t=fill[base0]`,
     
+    // 2. Topo Corporativo Limpo
     `[base0]` +
-      `drawbox=x=0:y=0:w=1080:h=150:color=black@0.58:t=fill,` +
-      `drawbox=x=46:y=44:w=420:h=72:color=${yellow}@1:t=fill,` +
-      `drawtext=text='${badge}':fontcolor=black:fontsize=33:x=74:y=62,` +
-      `drawtext=text='${brand}':fontcolor=${text}:fontsize=31:x=520:y=64:shadowcolor=black@0.75:shadowx=2:shadowy=2,` +
-      `drawbox=x=46:y=144:w=988:h=3:color=${yellow}@0.65:t=fill[base1]`,
+      `drawbox=x=0:y=0:w=1080:h=160:color=black@0.65:t=fill,` +
+      `drawbox=x=45:y=45:w=410:h=70:color=${yellow}@1:t=fill,` +
+      `drawtext=text='${badge}':fontcolor=black:fontsize=30:x=45+(410-text_w)/2:y=66:fontfile=Arial:style=Bold,` +
+      `drawtext=text='${brand}':fontcolor=${text}:fontsize=32:x=520:y=65:shadowcolor=black@0.80:shadowx=2:shadowy=2:fontfile=Arial:style=Bold,` +
+      `drawbox=x=0:y=158:w=1080:h=3:color=${yellow}@0.40:t=fill[base1]`,
       
+    // 3. Palco Central do Produto com Flutuação Orgânica (Gera dinamismo rápido)
     `[base1]` +
-      `drawbox=x=100:y=${productY + 70}:w=880:h=${productMaxH - 110}:color=black@0.20:t=fill,` +
-      `drawbox=x=150:y=${productY + 110}:w=780:h=${productMaxH - 200}:color=${goldSoft}@0.045:t=fill[base2]`,
+      `drawbox=x=80:y=${productY + 40}:w=920:h=${productMaxH - 60}:color=black@0.35:t=fill,` +
+      `drawbox=x=120:y=${productY + 80}:w=840:h=${productMaxH - 140}:color=${goldSoft}@0.25:t=fill[base2]`,
       
-    `[base2][prod]overlay=x=(W-w)/2:y=${productY}+5*sin(2*PI*t/4):eval=frame[stage1]`,
+    `[base2][prod]overlay=x=(W-w)/2:y=${productY}+6*sin(1.8*PI*t/3.5):eval=frame[stage1]`,
     
+    // 4. Card Comercial Estilo Aplicativo Moderno (Glassmorphism simulado)
     `[stage1]` +
-      `drawbox=x=40:y=${cardY + 18}:w=1000:h=${cardH}:color=black@0.46:t=fill,` +
-      `drawbox=x=58:y=${cardY}:w=964:h=${cardH}:color=${card}@0.90:t=fill,` +
-      `drawbox=x=58:y=${cardY}:w=964:h=${cardH}:color=white@0.075:t=3,` +
-      `drawbox=x=58:y=${cardY}:w=964:h=8:color=${yellow}@1:t=fill,` +
-      `drawbox=x=90:y=${cardY + 34}:w=160:h=4:color=${yellow}@1:t=fill[stage2]`,
+      `drawbox=x=40:y=${cardY + 15}:w=1000:h=${cardH}:color=black@0.50:t=fill,` + 
+      `drawbox=x=50:y=${cardY}:w=980:h=${cardH}:color=${card}@0.96:t=fill,` +     
+      `drawbox=x=50:y=${cardY}:w=980:h=${cardH}:color=white@0.05:t=2,` +         
+      `drawbox=x=50:y=${cardY}:w=980:h=6:color=${yellow}@1:t=fill[stage2]`,       
       
+    // 5. Exibição da Oferta e Copywriting
     `[stage2]` +
-      `drawtext=text='PREÇO DE HOJE':fontcolor=${yellow}:fontsize=38:x=92:y=${cardY + 56}:shadowcolor=black@0.75:shadowx=2:shadowy=2,` +
+      `drawtext=text='SÓ HOJE POR:':fontcolor=${yellow}:fontsize=34:x=90:y=${cardY + 54}:fontfile=Arial:style=Bold,` +
       discountFilter +
       oldPriceFilter +
-      `drawtext=text='${price}':fontcolor=${yellow}:fontsize=${priceFontSize}:x=(w-text_w)/2:y=${cardY + 202}:shadowcolor=black@0.90:shadowx=3:shadowy=3,` +
-      `drawtext=text='APROVEITE ANTES QUE ACABE':fontcolor=${text}:fontsize=31:x=(w-text_w)/2:y=${cardY + 332}:shadowcolor=black@0.75:shadowx=2:shadowy=2,` +
-      `drawtext=text='COMENTE':fontcolor=${text}:fontsize=45:x=(w-text_w)/2:y=${commentY}:shadowcolor=black@0.86:shadowx=2:shadowy=2,` +
-      `drawbox=x=220:y=${idBoxY}:w=640:h=118:color=black@0.35:t=fill,` +
-      `drawbox=x=230:y=${idBoxY - 8}:w=620:h=118:color=${yellow}@1:t=fill,` +
-      `drawbox=x=230:y=${idBoxY - 8}:w=620:h=118:color=white@0.38:t=4:enable='lt(mod(t\\,1.35)\\,0.42)',` +
-      `drawtext=text='ID ${idNumber}':fontcolor=black:fontsize=73:x=(w-text_w)/2:y=${idBoxY + 17},` +
-      `drawtext=text='RECEBA O LINK NO DIRECT':fontcolor=${text}:fontsize=37:x=(w-text_w)/2:y=${subY}:shadowcolor=black@0.80:shadowx=2:shadowy=2,` +
-      `drawtext=text='OFERTA VERIFICADA':fontcolor=${muted}:fontsize=27:x=66:y=${footerY},` +
-      `drawtext=text='${brand}':fontcolor=${muted}:fontsize=27:x=w-text_w-66:y=${footerY}[stage3]`,
+      `drawtext=text='${price}':fontcolor=${yellow}:fontsize=${priceFontSize}:x=(w-text_w)/2:y=${cardY + 195}:shadowcolor=black@0.95:shadowx=3:shadowy=3:fontfile=Arial:style=Bold,` +
+      `drawtext=text='GARANTA O SEU ANTES QUE ACABE':fontcolor=${text}:fontsize=28:x=(w-text_w)/2:y=${cardY + 325}:fontfile=Arial:style=Italic,` +
+      
+      // 6. Bloco de CTA Matador (Gera gatilho mental para digitação do ID nos comentários)
+      `drawtext=text='COMENTE ABAIXO':fontcolor=${text}:fontsize=42:x=(w-text_w)/2:y=${commentY}:shadowcolor=black@0.90:shadowx=2:shadowy=2:fontfile=Arial:style=Bold,` +
+      
+      `drawbox=x=210:y=${idBoxY}:w=660:h=120:color=black@0.40:t=fill,` +
+      `drawbox=x=220:y=${idBoxY - 6}:w=640:h=120:color=${yellow}@1:t=fill,` +
+      `drawbox=x=220:y=${idBoxY - 6}:w=640:h=120:color=white@0.45:t=4:enable='lt(mod(t\\,1.2)\\,0.35)',` +
+      `drawtext=text='QUERO ${idNumber}':fontcolor=black:fontsize=68:x=(w-text_w)/2:y=${idBoxY + 20}:fontfile=Arial:style=Bold,` +
+      
+      `drawtext=text='PARA RECEBER O LINK NO DIRECT':fontcolor=${text}:fontsize=34:x=(w-text_w)/2:y=${subY}:shadowcolor=black@0.80:fontfile=Arial:style=Bold,` +
+      
+      // Rodapé Institucional de Credibilidade
+      `drawtext=text='✓ COMPRA 100% SEGURA':fontcolor=${muted}:fontsize=26:x=75:y=${footerY}:fontfile=Arial,` +
+      `drawtext=text='${brand}':fontcolor=${muted}:fontsize=26:x=w-text_w-75:y=${footerY}:fontfile=Arial:style=Bold[stage3]`,
 
     hasBanner ? `[stage3][banner]overlay=0:${bannerY},format=yuv420p[out]` : `[stage3]format=yuv420p[out]`
   ].filter(Boolean);
@@ -309,7 +318,7 @@ async function buildReel(data, outPath) {
 }
 
 // ==========================================
-// ROTAS DA API (ENDPOINTS)
+// ROTAS DO SERVIDOR (ENDPOINTS)
 // ==========================================
 
 // GET /health
@@ -363,17 +372,17 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       duration,
       comentario: body.comentario || `ID ${produtoId}`,
       brand_name: body.brand_name || 'ACHEI DA HORA',
-      brand_badge: body.brand_badge || 'OFERTA ESPECIAL',
-      bg_color: body.bg_color || '0x050505',
+      brand_badge: body.brand_badge || 'OFERTA IMPERDÍVEL',
+      bg_color: body.bg_color || '0x0A0A0C',
       primary_color: body.primary_color || '0xFFE600',
-      secondary_color: body.secondary_color || '0xD6B84A',
-      accent_color: body.accent_color || '0xD92525',
+      secondary_color: body.secondary_color || '0x1F1F24',
+      accent_color: body.accent_color || '0xFA2A46',
       text_color: body.text_color || 'white',
-      muted_color: body.muted_color || '0xBEBEBE',
-      panel_color: body.panel_color || '0x101010'
+      muted_color: body.muted_color || '0xA0A0AB',
+      panel_color: body.panel_color || '0x121216'
     };
 
-    console.log(`[create-reel] Iniciando geração: id=${produtoId} banner=${Boolean(data.brand_banner_url)} d=${duration}s`);
+    console.log(`[create-reel] Geração Otimizada iniciada: id=${produtoId} d=${duration}s`);
 
     await buildReel(data, outPath);
 
@@ -386,12 +395,12 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[create-reel] Erro capturado:', err.message, err.stderr || '');
+    console.error('[create-reel] Erro em produção:', err.message, err.stderr || '');
 
     res.status(err.statusCode || 500).json({
       ok: false,
       error: err.publicCode || 'VIDEO_CREATION_FAILED',
-      message: err.statusCode ? err.message : 'Falha ao criar vídeo.',
+      message: err.statusCode ? err.message : 'Falha ao criar o vídeo promocional.',
       elapsed_ms: Date.now() - start
     });
   } finally {
@@ -405,7 +414,7 @@ app.delete('/reels', requireApiKey, async (req, res) => {
     const files = await fs.readdir(OUTPUT_DIR).catch(() => []);
     const mp4Files = files.filter(file => file.endsWith('.mp4'));
 
-    // Exclusão concorrente paralela usando Promise.all (Performance Enterprise)
+    // Exclusão concorrente ultrarrápida usando Promise.all
     await Promise.all(
       mp4Files.map(file => fs.remove(path.join(OUTPUT_DIR, file)))
     );
@@ -419,7 +428,7 @@ app.delete('/reels', requireApiKey, async (req, res) => {
   }
 });
 
-// Inicialização do Servidor
+// Inicialização do Servidor Express
 app.listen(PORT, () => {
-  console.log(`\x1b[32m[SERVER]\x1b[0m ${SERVICE_NAME} v${VERSION} escutando na porta ${PORT}`);
+  console.log(`\x1b[32m[REELS-ENGINE]\x1b[0m Ativo com sucesso: ${SERVICE_NAME} v${VERSION} na porta ${PORT}`);
 });
