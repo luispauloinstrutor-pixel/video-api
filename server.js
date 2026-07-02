@@ -14,7 +14,7 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'ree
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
 const SERVICE_NAME = 'reels-engine-pro';
-const VERSION = '10.0.0';
+const VERSION = '10.0.1';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -235,8 +235,22 @@ function splitTextLines(value, maxChars = 34, maxLines = 2) {
   return lines;
 }
 
+function normalizeUrl(value) {
+  let raw = String(value || '');
+
+  raw = raw
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/^["']+|["']+$/g, '')
+    .trim();
+
+  raw = raw.replace(/\s+/g, '');
+
+  return raw;
+}
+
 function validateUrl(value, fieldName) {
-  const raw = String(value || '').trim();
+  const raw = normalizeUrl(value);
 
   if (!raw) {
     const err = new Error(`${fieldName}_REQUIRED`);
@@ -252,15 +266,26 @@ function validateUrl(value, fieldName) {
     throw err;
   }
 
+  if (!/^https?:\/\//i.test(raw)) {
+    const err = new Error(`${fieldName}_INVALID_URL`);
+    err.statusCode = 400;
+    err.publicCode = `${fieldName}_INVALID_URL`;
+    throw err;
+  }
+
   let parsed;
 
   try {
     parsed = new URL(raw);
   } catch {
-    const err = new Error(`${fieldName}_INVALID_URL`);
-    err.statusCode = 400;
-    err.publicCode = `${fieldName}_INVALID_URL`;
-    throw err;
+    try {
+      parsed = new URL(encodeURI(raw));
+    } catch {
+      const err = new Error(`${fieldName}_INVALID_URL`);
+      err.statusCode = 400;
+      err.publicCode = `${fieldName}_INVALID_URL`;
+      throw err;
+    }
   }
 
   if (!['http:', 'https:'].includes(parsed.protocol)) {
@@ -655,7 +680,7 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
     };
 
     console.log(
-      `[create-reel] start layout=${layout} id=${produtoId} banner=${Boolean(data.brand_banner_url)} template=${Boolean(data.template_url)} duration=${duration}`
+      `[create-reel] start layout=${layout} id=${produtoId} image_url=${imageUrl} template=${Boolean(data.template_url)} duration=${duration}`
     );
 
     await buildReel(data, outPath);
