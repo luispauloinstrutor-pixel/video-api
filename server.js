@@ -14,7 +14,7 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'ree
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
 const SERVICE_NAME = 'reels-engine-pro';
-const VERSION = '10.0.2';
+const VERSION = '10.0.3';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -615,7 +615,19 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
     }
 
     const layout = cleanText(body.layout || 'elegant', 30);
-    const imageUrl = validateUrl(body.image_url, 'IMAGE_URL');
+
+    const imageUrl = normalizeUrl(body.image_url);
+
+    if (!imageUrl) {
+      return res.status(400).json({
+        ok: false,
+        error: 'IMAGE_URL_REQUIRED',
+        message: 'A URL da imagem do produto veio vazia.',
+        received_image_url: body.image_url || '',
+        normalized_image_url: imageUrl || '',
+        elapsed_ms: Date.now() - start
+      });
+    }
 
     const bannerUrl = body.brand_banner_url
       ? validateUrl(body.brand_banner_url, 'BRAND_BANNER_URL')
