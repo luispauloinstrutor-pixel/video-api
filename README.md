@@ -21,7 +21,7 @@ Correções:
   "preco_original_text": "DE R$ 229,00",
   "comentario": "ID 347",
   "desconto": "26% OFF",
-  "brand_name": "📡 Radar de Ofertas 🔥",
+  "brand_name": "Achei da Hora",
   "brand_badge": "OFERTA DO DIA",
   "brand_banner_url": "https://url-publica-do-rodape.png",
   "primary_color": "yellow",
