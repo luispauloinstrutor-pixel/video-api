@@ -14,7 +14,7 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'ree
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
 const SERVICE_NAME = 'reels-engine-pro';
-const VERSION = '10.0.1';
+const VERSION = '10.0.2';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -259,43 +259,28 @@ function validateUrl(value, fieldName) {
     throw err;
   }
 
-  if (raw.length > 2048) {
+  if (raw.length > 3000) {
     const err = new Error(`${fieldName}_TOO_LONG`);
     err.statusCode = 400;
     err.publicCode = `${fieldName}_TOO_LONG`;
     throw err;
   }
 
-  if (!/^https?:\/\//i.test(raw)) {
+  const lower = raw.toLowerCase();
+
+  if (!lower.startsWith('http://') && !lower.startsWith('https://')) {
     const err = new Error(`${fieldName}_INVALID_URL`);
     err.statusCode = 400;
     err.publicCode = `${fieldName}_INVALID_URL`;
     throw err;
   }
 
-  let parsed;
-
   try {
-    parsed = new URL(raw);
+    const parsed = new URL(raw);
+    return parsed.toString();
   } catch {
-    try {
-      parsed = new URL(encodeURI(raw));
-    } catch {
-      const err = new Error(`${fieldName}_INVALID_URL`);
-      err.statusCode = 400;
-      err.publicCode = `${fieldName}_INVALID_URL`;
-      throw err;
-    }
+    return encodeURI(raw);
   }
-
-  if (!['http:', 'https:'].includes(parsed.protocol)) {
-    const err = new Error(`${fieldName}_INVALID_PROTOCOL`);
-    err.statusCode = 400;
-    err.publicCode = `${fieldName}_INVALID_PROTOCOL`;
-    throw err;
-  }
-
-  return parsed.toString();
 }
 
 function ffmpeg(args) {
