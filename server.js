@@ -13,7 +13,7 @@ const API_KEY = process.env.API_KEY || '';
 const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'reels');
 
 const SERVICE_NAME = 'reels-engine-elegant';
-const VERSION = '9.0.0';
+const VERSION = '9.1.0';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -133,6 +133,64 @@ function fontSizeForPrice(price) {
   return 102;
 }
 
+function normalizeDiscount(value) {
+  const raw = cleanText(value || '', 24).toUpperCase();
+
+  if (!raw) return '';
+
+  if (/^\d{1,3}$/.test(raw)) {
+    return `${raw}% OFF`;
+  }
+
+  if (/^(\d{1,3})\s*%$/.test(raw)) {
+    return raw.replace(/^(\d{1,3})\s*%$/, '$1% OFF');
+  }
+
+  if (/^(\d{1,3})\s*OFF$/.test(raw)) {
+    return raw.replace(/^(\d{1,3})\s*OFF$/, '$1% OFF');
+  }
+
+  if (/^(\d{1,3})\s*%\s*OFF$/.test(raw)) {
+    return raw;
+  }
+
+  return raw;
+}
+
+function parseMoneyBR(value) {
+  let raw = String(value || '')
+    .replace(/[^\d,.]/g, '')
+    .trim();
+
+  if (!raw) return null;
+
+  if (raw.includes(',')) {
+    raw = raw.replace(/\./g, '').replace(',', '.');
+  }
+
+  const number = Number(raw);
+
+  if (!Number.isFinite(number)) return null;
+
+  return number;
+}
+
+function calculateDiscountText(oldPriceText, newPriceText) {
+  const oldPrice = parseMoneyBR(oldPriceText);
+  const newPrice = parseMoneyBR(newPriceText);
+
+  if (!oldPrice || !newPrice) return '';
+  if (oldPrice <= 0 || newPrice <= 0) return '';
+  if (newPrice >= oldPrice) return '';
+
+  const percentage = Math.round((1 - newPrice / oldPrice) * 100);
+
+  if (!Number.isFinite(percentage)) return '';
+  if (percentage <= 0 || percentage > 99) return '';
+
+  return `${percentage}% OFF`;
+}
+
 function splitTextLines(value, maxChars = 34, maxLines = 2) {
   const text = cleanText(value, maxChars * maxLines + 20);
   const words = text.split(' ').filter(Boolean);
@@ -250,8 +308,19 @@ function buildElegantFilter(data, hasBanner) {
   const priceRaw = cleanText(data.preco || data.price || 'OFERTA ESPECIAL', 42).toUpperCase();
   const price = ffText(priceRaw, 42);
 
-  const old = ffText(data.preco_original_text || data.preco_original || '', 38).toUpperCase();
-  const discount = ffText(data.desconto || data.discount || '', 24).toUpperCase();
+  const oldRaw = cleanText(data.preco_original_text || data.preco_original || '', 38).toUpperCase();
+  const old = ffText(oldRaw, 38).toUpperCase();
+
+  const discountRaw =
+    normalizeDiscount(
+      data.desconto ||
+      data.discount ||
+      data.desconto_text ||
+      data.discount_text ||
+      ''
+    ) || calculateDiscountText(oldRaw, priceRaw);
+
+  const discount = ffText(discountRaw, 24).toUpperCase();
 
   const idNumber = ffText(extractId(data.comentario, data.produto_id), 14);
   const priceFontSize = fontSizeForPrice(priceRaw);
@@ -272,39 +341,46 @@ function buildElegantFilter(data, hasBanner) {
 
   if (titleLines[0]) {
     cardDraws.push(
-      `drawtext=text='${titleLines[0]}':fontcolor=${text}:fontsize=34:x=96:y=${cardY + 70}:shadowcolor=black@0.70:shadowx=2:shadowy=2`
+      `drawtext=text='${titleLines[0]}':fontcolor=${text}:fontsize=34:x=96:y=${cardY + 70}:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none`
     );
   }
 
   if (titleLines[1]) {
     cardDraws.push(
-      `drawtext=text='${titleLines[1]}':fontcolor=${muted}:fontsize=30:x=96:y=${cardY + 116}:shadowcolor=black@0.60:shadowx=2:shadowy=2`
+      `drawtext=text='${titleLines[1]}':fontcolor=${muted}:fontsize=30:x=96:y=${cardY + 116}:shadowcolor=black@0.60:shadowx=2:shadowy=2:expansion=none`
     );
   }
 
   cardDraws.push(
-    `drawtext=text='PREÇO DE HOJE':fontcolor=${primary}:fontsize=36:x=96:y=${cardY + 188}:shadowcolor=black@0.65:shadowx=2:shadowy=2`
+    `drawtext=text='PREÇO DE HOJE':fontcolor=${primary}:fontsize=36:x=96:y=${cardY + 188}:shadowcolor=black@0.65:shadowx=2:shadowy=2:expansion=none`
   );
 
   if (discount) {
     cardDraws.push(
       `drawbox=x=730:y=${cardY + 166}:w=238:h=68:color=${accent}@0.96:t=fill`,
-      `drawtext=text='${discount}':fontcolor=white:fontsize=34:x=730+(238-text_w)/2:y=${cardY + 185}:shadowcolor=black@0.45:shadowx=2:shadowy=2`
+      `drawbox=x=730:y=${cardY + 166}:w=238:h=68:color=white@0.13:t=2`,
+      `drawtext=text='${discount}':fontcolor=white:fontsize=31:x=730+(238-text_w)/2:y=${cardY + 184}:shadowcolor=black@0.60:shadowx=2:shadowy=2:expansion=none`
+    );
+  } else {
+    cardDraws.push(
+      `drawbox=x=730:y=${cardY + 166}:w=238:h=68:color=${accent}@0.96:t=fill`,
+      `drawbox=x=730:y=${cardY + 166}:w=238:h=68:color=white@0.13:t=2`,
+      `drawtext=text='OFERTA':fontcolor=white:fontsize=31:x=730+(238-text_w)/2:y=${cardY + 184}:shadowcolor=black@0.60:shadowx=2:shadowy=2:expansion=none`
     );
   }
 
   if (old) {
     cardDraws.push(
-      `drawtext=text='${old}':fontcolor=${muted}:fontsize=31:x=(w-text_w)/2:y=${cardY + 270}:shadowcolor=black@0.65:shadowx=2:shadowy=2`
+      `drawtext=text='${old}':fontcolor=${muted}:fontsize=31:x=(w-text_w)/2:y=${cardY + 270}:shadowcolor=black@0.65:shadowx=2:shadowy=2:expansion=none`
     );
   }
 
   cardDraws.push(
-    `drawtext=text='${price}':fontcolor=${primary}:fontsize=${priceFontSize}:x=(w-text_w)/2:y=${cardY + 330}:shadowcolor=black@0.85:shadowx=3:shadowy=3`,
-    `drawtext=text='COMENTA':fontcolor=${text}:fontsize=42:x=(w-text_w)/2:y=${cardY + 462}:shadowcolor=black@0.80:shadowx=2:shadowy=2`,
+    `drawtext=text='${price}':fontcolor=${primary}:fontsize=${priceFontSize}:x=(w-text_w)/2:y=${cardY + 330}:shadowcolor=black@0.85:shadowx=3:shadowy=3:expansion=none`,
+    `drawtext=text='COMENTA':fontcolor=${text}:fontsize=42:x=(w-text_w)/2:y=${cardY + 462}:shadowcolor=black@0.80:shadowx=2:shadowy=2:expansion=none`,
     `drawbox=x=230:y=${cardY + 522}:w=620:h=112:color=${primary}@1:t=fill`,
-    `drawtext=text='${idNumber}':fontcolor=black:fontsize=70:x=(w-text_w)/2:y=${cardY + 548}`,
-    `drawtext=text='QUE TE MANDO O LINK NO DIRECT':fontcolor=${text}:fontsize=34:x=(w-text_w)/2:y=${cardY + 655}:shadowcolor=black@0.78:shadowx=2:shadowy=2`
+    `drawtext=text='ID ${idNumber}':fontcolor=black:fontsize=70:x=(w-text_w)/2:y=${cardY + 548}:expansion=none`,
+    `drawtext=text='QUE TE MANDO O LINK NO DIRECT':fontcolor=${text}:fontsize=34:x=(w-text_w)/2:y=${cardY + 655}:shadowcolor=black@0.78:shadowx=2:shadowy=2:expansion=none`
   );
 
   const filters = [
@@ -318,9 +394,9 @@ function buildElegantFilter(data, hasBanner) {
 
     `[canvas]` +
       `drawbox=x=0:y=0:w=1080:h=150:color=black@0.34:t=fill,` +
-      `drawtext=text='${brand}':fontcolor=${text}:fontsize=34:x=64:y=54:shadowcolor=black@0.70:shadowx=2:shadowy=2,` +
+      `drawtext=text='${brand}':fontcolor=${text}:fontsize=34:x=64:y=54:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none,` +
       `drawbox=x=730:y=42:w=286:h=66:color=${primary}@1:t=fill,` +
-      `drawtext=text='${badge}':fontcolor=black:fontsize=30:x=730+(286-text_w)/2:y=61,` +
+      `drawtext=text='${badge}':fontcolor=black:fontsize=30:x=730+(286-text_w)/2:y=61:expansion=none,` +
       `drawbox=x=64:y=144:w=952:h=2:color=${primary}@0.55:t=fill,` +
       `drawbox=x=64:y=${productY}:w=952:h=${productH + 40}:color=${softPanel}@0.88:t=fill,` +
       `drawbox=x=64:y=${productY}:w=952:h=${productH + 40}:color=white@0.06:t=2,` +
@@ -331,8 +407,8 @@ function buildElegantFilter(data, hasBanner) {
     `[stage1]${cardDraws.join(',')}[stage2]`,
 
     `[stage2]` +
-      `drawtext=text='OFERTA VERIFICADA':fontcolor=${muted}:fontsize=26:x=64:y=${hasBanner ? 1714 : 1840},` +
-      `drawtext=text='${brand}':fontcolor=${muted}:fontsize=26:x=w-text_w-64:y=${hasBanner ? 1714 : 1840}[stage3]`,
+      `drawtext=text='OFERTA VERIFICADA':fontcolor=${muted}:fontsize=26:x=64:y=${hasBanner ? 1714 : 1840}:expansion=none,` +
+      `drawtext=text='${brand}':fontcolor=${muted}:fontsize=26:x=w-text_w-64:y=${hasBanner ? 1714 : 1840}:expansion=none[stage3]`,
 
     hasBanner
       ? `[stage3][banner]overlay=0:${bannerY}:shortest=1,format=yuv420p[out]`
