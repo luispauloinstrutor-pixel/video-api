@@ -14,7 +14,7 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'ree
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
 const SERVICE_NAME = 'reels-engine-pro';
-const VERSION = '10.1.6';
+const VERSION = '10.1.7';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -279,45 +279,45 @@ function outputArgs(outPath) {
 function fontSizeForNewTemplatePrice(price) {
   const len = String(price || '').length;
 
-  if (len >= 12) return 76;
-  if (len >= 10) return 86;
-  if (len >= 8) return 98;
+  if (len >= 12) return 70;
+  if (len >= 10) return 78;
+  if (len >= 9) return 86;
+  if (len >= 8) return 94;
 
-  return 108;
+  return 102;
 }
 
 function buildAcheiStoryFilter(data) {
-  const productBoxX = 130;
-  const productBoxY = 235;
-  const productBoxW = 820;
-  const productBoxH = 900;
+  // Área da imagem:
+  // sem drawbox branco artificial; apenas encaixa a imagem grande na área
+  const productAreaX = 95;
+  const productAreaY = 220;
+  const productAreaW = 890;
+  const productAreaH = 820;
 
-  const productMaxW = 810;
-  const productMaxH = 760;
+  // Cards
+  const discountBox = { x: 58, y: 1088, w: 215, h: 155 };
+  const oldBox = { x: 58, y: 1265, w: 310, h: 155 };
+  const priceBox = { x: 385, y: 1265, w: 640, h: 155 };
+  const ctaBox = { x: 210, y: 1445, w: 700, h: 110 };
+  const ctaSubBox = { x: 255, y: 1565, w: 610, h: 72 };
 
-  const rawTitle = cleanText(data.titulo || data.title || '', 80);
-  const titleLines = splitTextLines(rawTitle, 21, 2)
+  const titleArea = { x: 330, y: 1085, w: 590 };
+  const titleLines = splitTextLines(data.titulo || data.title || '', 20, 2)
     .map(line => ffText(line, 42));
 
   const longestTitle = Math.max(...titleLines.map(line => line.length), 0);
   const titleFontSize =
-    longestTitle > 20 ? 40 :
-    longestTitle > 16 ? 45 :
-    50;
+    longestTitle > 18 ? 38 :
+    longestTitle > 15 ? 43 :
+    48;
 
-  const titleX = 382;
-  const titleY = 1184;
-  const titleGap = titleFontSize + 10;
+  const titleGap = titleFontSize + 8;
 
   const priceRaw = cleanText(data.preco || data.price || '', 42);
   const priceNumberRaw = normalizeCurrentPriceNumber(priceRaw);
   const priceNumber = ffText(priceNumberRaw, 20);
-
-  let priceFontSize = fontSizeForNewTemplatePrice(priceNumberRaw);
-  if (priceNumberRaw.length >= 10) priceFontSize = 82;
-  else if (priceNumberRaw.length >= 9) priceFontSize = 88;
-  else if (priceNumberRaw.length >= 8) priceFontSize = 96;
-  else priceFontSize = 104;
+  const priceFontSize = fontSizeForNewTemplatePrice(priceNumberRaw);
 
   const oldRaw = normalizeOldPriceText(data.preco_original_text || data.preco_original || '');
   const oldPriceValue = ffText(normalizeOldPriceValue(oldRaw), 24).toUpperCase();
@@ -336,52 +336,55 @@ function buildAcheiStoryFilter(data) {
 
   const draws = [];
 
-  if (discountNum) {
-    draws.push(
-      `drawtext=text='${discountNum}':fontcolor=black:fontsize=86:x=96:y=1172:expansion=none`,
-      `drawtext=text='%':fontcolor=black:fontsize=38:x=206:y=1182:expansion=none`,
-      `drawtext=text='OFF':fontcolor=black:fontsize=25:x=206:y=1226:expansion=none`
-    );
-  }
-
+  // Título
   if (titleLines[0]) {
     draws.push(
-      `drawtext=text='${titleLines[0]}':fontcolor=black:fontsize=${titleFontSize}:x=${titleX}:y=${titleY}:expansion=none`
+      `drawtext=text='${titleLines[0]}':fontcolor=black:fontsize=${titleFontSize}:x=${titleArea.x}+(${titleArea.w}-text_w)/2:y=${titleArea.y}:expansion=none`
     );
   }
 
   if (titleLines[1]) {
     draws.push(
-      `drawtext=text='${titleLines[1]}':fontcolor=black:fontsize=${titleFontSize}:x=${titleX}:y=${titleY + titleGap}:expansion=none`
+      `drawtext=text='${titleLines[1]}':fontcolor=black:fontsize=${titleFontSize}:x=${titleArea.x}+(${titleArea.w}-text_w)/2:y=${titleArea.y + titleGap}:expansion=none`
     );
   }
 
+  // Desconto centralizado no card amarelo
+  if (discountNum) {
+    draws.push(
+      `drawtext=text='${discountNum}':fontcolor=black:fontsize=74:x=${discountBox.x}+(${discountBox.w}-text_w)/2-8:y=${discountBox.y}+14:expansion=none`,
+      `drawtext=text='% OFF':fontcolor=black:fontsize=28:x=${discountBox.x}+(${discountBox.w}-text_w)/2+20:y=${discountBox.y}+92:expansion=none`
+    );
+  }
+
+  // Preço antigo centralizado no box preto esquerdo
   if (oldPriceValue) {
     draws.push(
-      `drawtext=text='DE':fontcolor=white:fontsize=48:x=96:y=1340:expansion=none`,
-      `drawtext=text='R$ ${oldPriceValue}':fontcolor=white:fontsize=34:x=96:y=1400:expansion=none`
+      `drawtext=text='DE':fontcolor=white:fontsize=46:x=${oldBox.x}+(${oldBox.w}-text_w)/2:y=${oldBox.y}+16:expansion=none`,
+      `drawtext=text='R$ ${oldPriceValue}':fontcolor=white:fontsize=33:x=${oldBox.x}+(${oldBox.w}-text_w)/2:y=${oldBox.y}+82:expansion=none`
     );
   }
 
+  // Preço novo: POR e R$ na coluna esquerda; valor centralizado na área direita
   if (priceNumber) {
     draws.push(
-      `drawtext=text='POR':fontcolor=white:fontsize=38:x=386:y=1334:expansion=none`,
-      `drawtext=text='R$':fontcolor=white:fontsize=60:x=386:y=1394:expansion=none`,
-      `drawtext=text='${priceNumber}':fontcolor=white:fontsize=${priceFontSize}:x=600:y=1336:expansion=none`
+      `drawtext=text='POR':fontcolor=white:fontsize=36:x=${priceBox.x}+18:y=${priceBox.y}+18:expansion=none`,
+      `drawtext=text='R$':fontcolor=white:fontsize=58:x=${priceBox.x}+18:y=${priceBox.y}+72:expansion=none`,
+      `drawtext=text='${priceNumber}':fontcolor=white:fontsize=${priceFontSize}:x=${priceBox.x}+175+((${priceBox.w}-195)-text_w)/2:y=${priceBox.y}+18:expansion=none`
     );
   }
 
+  // CTA amarelo + número
   draws.push(
-    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=43:x=250:y=1514:expansion=none`,
-    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=78:x=688+(145-text_w)/2:y=1494:expansion=none`,
-    `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=35:x=(w-text_w)/2:y=1628:expansion=none`
+    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=42:x=${ctaBox.x}+20+((460)-text_w)/2:y=${ctaBox.y}+24:expansion=none`,
+    `drawtext=text='${idNumber}':fontcolor=0xE53935:fontsize=76:x=${ctaBox.x}+520+((130)-text_w)/2:y=${ctaBox.y}+10:expansion=none`,
+    `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=34:x=${ctaSubBox.x}+(${ctaSubBox.w}-text_w)/2:y=${ctaSubBox.y}+16:expansion=none`
   );
 
   return [
     `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,format=rgba[base]`,
-    `[1:v]scale=${productMaxW}:${productMaxH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
-    `[base]drawbox=x=${productBoxX}:y=${productBoxY}:w=${productBoxW}:h=${productBoxH}:color=white@1:t=fill[baseBox]`,
-    `[baseBox][prod]overlay=x=${productBoxX}+(${productBoxW}-w)/2:y=${productBoxY}+(${productBoxH}-h)/2+30:shortest=1[stage1]`,
+    `[1:v]scale=${productAreaW}:${productAreaH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
+    `[base][prod]overlay=x=${productAreaX}+(${productAreaW}-w)/2:y=${productAreaY}+(${productAreaH}-h)/2:shortest=1[stage1]`,
     `[stage1]${draws.join(',')},format=yuv420p[out]`,
   ].join(';');
 }
