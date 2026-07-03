@@ -14,7 +14,7 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'ree
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
 const SERVICE_NAME = 'reels-engine-pro';
-const VERSION = '10.1.1';
+const VERSION = '10.1.2';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -30,12 +30,12 @@ app.use(express.json({ limit: '3mb' }));
 
 app.use('/reels', express.static(OUTPUT_DIR, {
   maxAge: '7d',
-  immutable: true
+  immutable: true,
 }));
 
 app.use('/assets', express.static(ASSETS_DIR, {
   maxAge: '7d',
-  immutable: true
+  immutable: true,
 }));
 
 function requireApiKey(req, res, next) {
@@ -44,7 +44,7 @@ function requireApiKey(req, res, next) {
   if (req.headers['x-api-key'] !== API_KEY) {
     return res.status(401).json({
       ok: false,
-      error: 'UNAUTHORIZED'
+      error: 'UNAUTHORIZED',
     });
   }
 
@@ -105,7 +105,7 @@ const NAMED_COLOR_MAP = {
   dark: '0x070707',
   white: 'white',
   gray: '0xB8B8B8',
-  grey: '0xB8B8B8'
+  grey: '0xB8B8B8',
 };
 
 function color(value, fallback) {
@@ -146,9 +146,9 @@ function fontSizeForNewTemplatePrice(price) {
 
   if (len >= 12) return 78;
   if (len >= 10) return 88;
-  if (len >= 8) return 102;
+  if (len >= 8) return 100;
 
-  return 112;
+  return 110;
 }
 
 function normalizeDiscount(value) {
@@ -156,21 +156,10 @@ function normalizeDiscount(value) {
 
   if (!raw) return '';
 
-  if (/^\d{1,3}$/.test(raw)) {
-    return `${raw}% OFF`;
-  }
-
-  if (/^(\d{1,3})\s*%$/.test(raw)) {
-    return raw.replace(/^(\d{1,3})\s*%$/, '$1% OFF');
-  }
-
-  if (/^(\d{1,3})\s*OFF$/.test(raw)) {
-    return raw.replace(/^(\d{1,3})\s*OFF$/, '$1% OFF');
-  }
-
-  if (/^(\d{1,3})\s*%\s*OFF$/.test(raw)) {
-    return raw;
-  }
+  if (/^\d{1,3}$/.test(raw)) return `${raw}% OFF`;
+  if (/^(\d{1,3})\s*%$/.test(raw)) return raw.replace(/^(\d{1,3})\s*%$/, '$1% OFF');
+  if (/^(\d{1,3})\s*OFF$/.test(raw)) return raw.replace(/^(\d{1,3})\s*OFF$/, '$1% OFF');
+  if (/^(\d{1,3})\s*%\s*OFF$/.test(raw)) return raw;
 
   return raw;
 }
@@ -182,10 +171,7 @@ function discountNumber(value) {
 }
 
 function parseMoneyBR(value) {
-  let raw = String(value || '')
-    .replace(/[^\d,.]/g, '')
-    .trim();
-
+  let raw = String(value || '').replace(/[^\d,.]/g, '').trim();
   if (!raw) return null;
 
   if (raw.includes(',')) {
@@ -193,7 +179,6 @@ function parseMoneyBR(value) {
   }
 
   const number = Number(raw);
-
   if (!Number.isFinite(number)) return null;
 
   return number;
@@ -208,7 +193,6 @@ function calculateDiscountText(oldPriceText, newPriceText) {
   if (newPrice >= oldPrice) return '';
 
   const percentage = Math.round((1 - newPrice / oldPrice) * 100);
-
   if (!Number.isFinite(percentage)) return '';
   if (percentage <= 0 || percentage > 99) return '';
 
@@ -217,12 +201,9 @@ function calculateDiscountText(oldPriceText, newPriceText) {
 
 function normalizeOldPriceText(value) {
   const raw = cleanText(value || '', 40).toUpperCase();
-
   if (!raw) return '';
-
   if (raw.startsWith('DE ')) return raw;
   if (raw.startsWith('R$')) return `DE ${raw}`;
-
   return raw;
 }
 
@@ -239,7 +220,6 @@ function normalizeCurrentPriceNumber(value) {
     .trim();
 
   const m = raw.match(/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+)/);
-
   return m ? m[1] : raw;
 }
 
@@ -264,7 +244,6 @@ function splitTextLines(value, maxChars = 34, maxLines = 2) {
   }
 
   if (current && lines.length < maxLines) lines.push(current);
-
   return lines;
 }
 
@@ -278,7 +257,6 @@ function normalizeUrl(value) {
     .trim();
 
   raw = raw.replace(/\s+/g, '');
-
   return raw;
 }
 
@@ -323,7 +301,7 @@ function ffmpeg(args) {
       ['-hide_banner', '-nostdin', ...args],
       {
         timeout: FFMPEG_TIMEOUT_MS,
-        maxBuffer: 16 * 1024 * 1024
+        maxBuffer: 16 * 1024 * 1024,
       },
       (err, stdout, stderr) => {
         if (err) {
@@ -346,7 +324,7 @@ function outputArgs(outPath) {
     '-crf', '24',
     '-pix_fmt', 'yuv420p',
     '-movflags', '+faststart',
-    outPath
+    outPath,
   ];
 }
 
@@ -398,7 +376,7 @@ function buildElegantFilter(data, hasBanner) {
   const cardDraws = [
     `drawbox=x=56:y=${cardY}:w=968:h=${cardH}:color=${panel}@0.96:t=fill`,
     `drawbox=x=56:y=${cardY}:w=968:h=${cardH}:color=white@0.08:t=2`,
-    `drawbox=x=96:y=${cardY + 42}:w=112:h=4:color=${primary}@1:t=fill`
+    `drawbox=x=96:y=${cardY + 42}:w=112:h=4:color=${primary}@1:t=fill`,
   ];
 
   if (titleLines[0]) {
@@ -447,13 +425,10 @@ function buildElegantFilter(data, hasBanner) {
 
   const filters = [
     `color=c=${bg}:s=1080x1920:d=${duration},format=rgba[canvas]`,
-
     `[0:v]scale=900:${productH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
-
     hasBanner
       ? `[1:v]scale=1080:${bannerH}:force_original_aspect_ratio=increase,crop=1080:${bannerH},format=rgba[banner]`
       : null,
-
     `[canvas]` +
       `drawbox=x=0:y=0:w=1080:h=150:color=black@0.34:t=fill,` +
       `drawtext=text='${brand}':fontcolor=${text}:fontsize=34:x=64:y=54:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none,` +
@@ -463,18 +438,14 @@ function buildElegantFilter(data, hasBanner) {
       `drawbox=x=64:y=${productY}:w=952:h=${productH + 40}:color=${softPanel}@0.88:t=fill,` +
       `drawbox=x=64:y=${productY}:w=952:h=${productH + 40}:color=white@0.06:t=2,` +
       `drawbox=x=94:y=${productY + 30}:w=892:h=${productH - 20}:color=black@0.18:t=fill[base1]`,
-
     `[base1][prod]overlay=x=(W-w)/2:y=${productY}+20+(${productH}-h)/2:shortest=1[stage1]`,
-
     `[stage1]${cardDraws.join(',')}[stage2]`,
-
     `[stage2]` +
       `drawtext=text='OFERTA VERIFICADA':fontcolor=${muted}:fontsize=26:x=64:y=${hasBanner ? 1714 : 1840}:expansion=none,` +
       `drawtext=text='${brand}':fontcolor=${muted}:fontsize=26:x=w-text_w-64:y=${hasBanner ? 1714 : 1840}:expansion=none[stage3]`,
-
     hasBanner
       ? `[stage3][banner]overlay=0:${bannerY}:shortest=1,format=yuv420p[out]`
-      : `[stage3]format=yuv420p[out]`
+      : `[stage3]format=yuv420p[out]`,
   ].filter(Boolean);
 
   return filters.join(';');
@@ -487,16 +458,16 @@ function buildAcheiStoryFilter(data) {
   const productBoxH = 830;
 
   const productInnerX = 182;
-  const productInnerY = 318;
+  const productInnerY = 350;
   const productInnerW = 716;
-  const productInnerH = 610;
+  const productInnerH = 560;
 
   const rawTitle = cleanText(data.titulo || data.title || '', 70).toUpperCase();
-  const titleLines = splitTextLines(rawTitle, 22, 2)
-    .map(line => ffText(line, 36).toUpperCase());
+  const titleLines = splitTextLines(rawTitle, 20, 2)
+    .map(line => ffText(line, 34).toUpperCase());
 
-  const firstTitleSize = titleLines[0] && titleLines[0].length > 18 ? 30 : 34;
-  const secondTitleSize = titleLines[1] && titleLines[1].length > 14 ? 48 : 56;
+  const firstTitleSize = titleLines[0] && titleLines[0].length > 16 ? 28 : 32;
+  const secondTitleSize = titleLines[1] && titleLines[1].length > 12 ? 50 : 56;
 
   const priceRaw = cleanText(data.preco || data.price || '', 42);
   const priceNumberRaw = normalizeCurrentPriceNumber(priceRaw);
@@ -522,55 +493,51 @@ function buildAcheiStoryFilter(data) {
 
   if (discountNum) {
     draws.push(
-      `drawtext=text='${discountNum}':fontcolor=black:fontsize=100:x=108:y=1188:borderw=2:bordercolor=black@0.15:expansion=none`,
-      `drawtext=text='%':fontcolor=black:fontsize=44:x=236:y=1198:borderw=1:bordercolor=black@0.12:expansion=none`,
-      `drawtext=text='OFF':fontcolor=black:fontsize=28:x=236:y=1246:borderw=1:bordercolor=black@0.12:expansion=none`
+      `drawtext=text='${discountNum}':fontcolor=black:fontsize=96:x=106:y=1188:expansion=none`,
+      `drawtext=text='%':fontcolor=black:fontsize=42:x=228:y=1198:expansion=none`,
+      `drawtext=text='OFF':fontcolor=black:fontsize=28:x=228:y=1242:expansion=none`
     );
   }
 
   if (titleLines[0]) {
     draws.push(
-      `drawtext=text='${titleLines[0]}':fontcolor=white:fontsize=${firstTitleSize}:x=403:y=1194:borderw=3:bordercolor=black@0.82:shadowcolor=black@0.50:shadowx=1:shadowy=1:expansion=none`
+      `drawtext=text='${titleLines[0]}':fontcolor=black:fontsize=${firstTitleSize}:x=392:y=1188:expansion=none`
     );
   }
 
   if (titleLines[1]) {
     draws.push(
-      `drawtext=text='${titleLines[1]}':fontcolor=0xFFD000:fontsize=${secondTitleSize}:x=403:y=1240:borderw=3:bordercolor=black@0.82:shadowcolor=black@0.50:shadowx=1:shadowy=1:expansion=none`
+      `drawtext=text='${titleLines[1]}':fontcolor=black:fontsize=${secondTitleSize}:x=392:y=1232:expansion=none`
     );
   }
 
   if (oldPriceValue) {
     draws.push(
-      `drawtext=text='DE':fontcolor=white:fontsize=30:x=112:y=1372:borderw=2:bordercolor=black@0.70:expansion=none`,
-      `drawtext=text='${oldPriceValue}':fontcolor=white:fontsize=28:x=112:y=1414:borderw=2:bordercolor=black@0.70:expansion=none`
+      `drawtext=text='DE':fontcolor=white:fontsize=42:x=112:y=1360:expansion=none`,
+      `drawtext=text='R$ ${oldPriceValue}':fontcolor=white:fontsize=42:x=112:y=1416:expansion=none`
     );
   }
 
   if (priceNumber) {
     draws.push(
-      `drawtext=text='POR':fontcolor=white:fontsize=52:x=394:y=1358:borderw=2:bordercolor=black@0.70:expansion=none`,
-      `drawtext=text='R$':fontcolor=white:fontsize=70:x=392:y=1428:borderw=2:bordercolor=black@0.70:expansion=none`,
-      `drawtext=text='${priceNumber}':fontcolor=0xFFD000:fontsize=${priceFontSize}:x=555:y=1348:borderw=3:bordercolor=black@0.72:shadowcolor=black@0.65:shadowx=2:shadowy=2:expansion=none`
+      `drawtext=text='POR':fontcolor=white:fontsize=46:x=402:y=1352:expansion=none`,
+      `drawtext=text='R$':fontcolor=white:fontsize=68:x=402:y=1424:expansion=none`,
+      `drawtext=text='${priceNumber}':fontcolor=0xFFD000:fontsize=${priceFontSize}:x=536:y=1352:expansion=none`
     );
   }
 
   draws.push(
-    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=38:x=286:y=1536:borderw=2:bordercolor=black@0.08:expansion=none`,
-    `drawtext=text='${idNumber}':fontcolor=0xD71920:fontsize=88:x=710:y=1498:borderw=3:bordercolor=black@0.30:expansion=none`,
-    `drawtext=text='QUE TE MANDA O LINK':fontcolor=white:fontsize=38:x=(w-text_w)/2:y=1622:borderw=2:bordercolor=black@0.68:expansion=none`
+    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=42:x=298:y=1533:expansion=none`,
+    `drawtext=text='${idNumber}':fontcolor=0xD71920:fontsize=86:x=714:y=1498:expansion=none`,
+    `drawtext=text='QUE TE MANDA O LINK':fontcolor=white:fontsize=38:x=(w-text_w)/2:y=1622:expansion=none`
   );
 
   return [
     `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,format=rgba[base]`,
-
     `[1:v]scale=${productInnerW}:${productInnerH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
-
     `[base]drawbox=x=${productBoxX}:y=${productBoxY}:w=${productBoxW}:h=${productBoxH}:color=white@1:t=fill[base2]`,
-
     `[base2][prod]overlay=x=${productInnerX}+(${productInnerW}-w)/2:y=${productInnerY}+(${productInnerH}-h)/2:shortest=1[stage1]`,
-
-    `[stage1]${draws.join(',')},format=yuv420p[out]`
+    `[stage1]${draws.join(',')},format=yuv420p[out]`,
   ].join(';');
 }
 
@@ -584,18 +551,15 @@ async function buildAcheiStoryReel(data, outPath) {
 
   const args = [
     '-y',
-
     '-loop', '1',
     '-t', String(data.duration),
     '-i', templateInput,
-
     '-loop', '1',
     '-t', String(data.duration),
     '-i', data.image_url,
-
     '-filter_complex', filter,
     '-map', '[out]',
-    ...outputArgs(outPath)
+    ...outputArgs(outPath),
   ];
 
   await ffmpeg(args);
@@ -611,10 +575,9 @@ async function buildReel(data, outPath) {
 
   const args = [
     '-y',
-
     '-loop', '1',
     '-t', String(data.duration),
-    '-i', data.image_url
+    '-i', data.image_url,
   ];
 
   if (hasBanner) {
@@ -644,7 +607,7 @@ app.get('/health', (req, res) => {
     assets_dir: ASSETS_DIR,
     template_url: PUBLIC_BASE_URL ? `${PUBLIC_BASE_URL}/assets/achei-story-base.png` : '',
     active_jobs: activeFFmpegJobs,
-    max_jobs: MAX_FFMPEG_JOBS
+    max_jobs: MAX_FFMPEG_JOBS,
   });
 });
 
@@ -655,7 +618,7 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
     return res.status(429).json({
       ok: false,
       error: 'SERVER_BUSY',
-      message: 'Já existe uma geração de vídeo em andamento. Tente novamente em alguns segundos.'
+      message: 'Já existe uma geração de vídeo em andamento. Tente novamente em alguns segundos.',
     });
   }
 
@@ -665,12 +628,11 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
     if (!PUBLIC_BASE_URL) {
       return res.status(500).json({
         ok: false,
-        error: 'MISSING_PUBLIC_BASE_URL'
+        error: 'MISSING_PUBLIC_BASE_URL',
       });
     }
 
     const layout = cleanText(body.layout || 'elegant', 30);
-
     const imageUrl = normalizeUrl(body.image_url);
 
     if (!imageUrl) {
@@ -680,7 +642,7 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
         message: 'A URL da imagem do produto veio vazia.',
         received_image_url: body.image_url || '',
         normalized_image_url: imageUrl || '',
-        elapsed_ms: Date.now() - start
+        elapsed_ms: Date.now() - start,
       });
     }
 
@@ -709,26 +671,22 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
 
     const data = {
       ...body,
-
       layout,
       image_url: imageUrl,
       brand_banner_url: bannerUrl,
       template_url: templateUrl,
-
       produto_id: produtoId,
       duration,
       comentario: body.comentario || `ID ${produtoId}`,
-
       brand_name: body.brand_name || 'ACHEI DA HORA',
       brand_badge: body.brand_badge || 'OFERTA DO DIA',
-
       bg_color: body.bg_color || '0x070707',
       primary_color: body.primary_color || '0xF2C94C',
       accent_color: body.accent_color || '0xB83232',
       text_color: body.text_color || 'white',
       muted_color: body.muted_color || '0xB8B8B8',
       panel_color: body.panel_color || '0x111111',
-      soft_panel_color: body.soft_panel_color || '0x181818'
+      soft_panel_color: body.soft_panel_color || '0x181818',
     };
 
     console.log(
@@ -745,7 +703,7 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       layout,
       video_url: videoUrl,
       filename: fileName,
-      elapsed_ms: Date.now() - start
+      elapsed_ms: Date.now() - start,
     });
   } catch (err) {
     const stderrText = String(err.stderr || '').slice(-4000);
@@ -757,7 +715,7 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       error: err.publicCode || 'VIDEO_CREATION_FAILED',
       message: err.statusCode ? err.message : 'Falha ao criar vídeo.',
       ffmpeg_error: stderrText,
-      elapsed_ms: Date.now() - start
+      elapsed_ms: Date.now() - start,
     });
   } finally {
     releaseJobSlot();
@@ -770,15 +728,11 @@ app.delete('/reels', requireApiKey, async (req, res) => {
 
   for (const file of files) {
     if (!file.endsWith('.mp4')) continue;
-
     await fs.remove(path.join(OUTPUT_DIR, file));
     deleted++;
   }
 
-  res.json({
-    ok: true,
-    deleted
-  });
+  res.json({ ok: true, deleted });
 });
 
 app.listen(PORT, () => {
