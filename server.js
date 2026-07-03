@@ -505,9 +505,9 @@ function buildAcheiStoryFilter(data) {
 
   if (discountNum) {
     draws.push(
-      `drawtext=text='${discountNum}':fontcolor=black:fontsize=92:x=100:y=1182:expansion=none`,
-      `drawtext=text='%':fontcolor=black:fontsize=40:x=222:y=1194:expansion=none`,
-      `drawtext=text='OFF':fontcolor=black:fontsize=26:x=222:y=1240:expansion=none`
+      `drawtext=text='${discountNum}':fontcolor=black:fontsize=92:x=105:y=1182:expansion=none`,
+      `drawtext=text='%':fontcolor=black:fontsize=40:x=227:y=1194:expansion=none`,
+      `drawtext=text='OFF':fontcolor=black:fontsize=26:x=227:y=1240:expansion=none`
     );
   }
 
@@ -532,15 +532,15 @@ function buildAcheiStoryFilter(data) {
 
   if (priceNumber) {
     draws.push(
-      `drawtext=text='POR':fontcolor=white:fontsize=45:x=392:y=1336:expansion=none`,
-      `drawtext=text='R$':fontcolor=white:fontsize=62:x=392:y=1395:expansion=none`,
+      `drawtext=text='POR':fontcolor=white:fontsize=45:x=397:y=1336:expansion=none`,
+      `drawtext=text='R$':fontcolor=white:fontsize=62:x=397:y=1395:expansion=none`,
       `drawtext=text='${priceNumber}':fontcolor=white:fontsize=${priceFontSize}:x=590:y=1348:expansion=none`
     );
   }
 
   draws.push(
-    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=44:x=255:y=1536:expansion=none`,
-    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=84:x=688+(150-text_w)/2:y=1524:expansion=none`,
+    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=44:x=255:y=1533:expansion=none`,
+    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=84:x=688+(150-text_w)/2:y=1522:expansion=none`,
     `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=1625:expansion=none`
   );
 
