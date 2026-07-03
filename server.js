@@ -14,7 +14,7 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'ree
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
 const SERVICE_NAME = 'reels-engine-pro';
-const VERSION = '10.1.5';
+const VERSION = '10.1.6';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -95,60 +95,6 @@ function extractId(value, fallback) {
 
   const fallbackDigits = String(fallback || '').replace(/\D/g, '');
   return fallbackDigits || '000';
-}
-
-const NAMED_COLOR_MAP = {
-  yellow: '0xF2C94C',
-  gold: '0xD8B45A',
-  red: '0xD71920',
-  black: '0x070707',
-  dark: '0x070707',
-  white: 'white',
-  gray: '0xB8B8B8',
-  grey: '0xB8B8B8',
-};
-
-function color(value, fallback) {
-  const raw = String(value || fallback).trim();
-  const named = NAMED_COLOR_MAP[raw.toLowerCase()];
-
-  if (named) return named;
-
-  if (/^#[0-9a-fA-F]{6}$/.test(raw)) {
-    return `0x${raw.slice(1)}`;
-  }
-
-  if (/^0x[0-9a-fA-F]{6}$/.test(raw)) {
-    return raw;
-  }
-
-  if (/^[a-zA-Z]{3,24}$/.test(raw)) {
-    return raw.toLowerCase();
-  }
-
-  return fallback;
-}
-
-function fontSizeForPrice(price) {
-  const len = String(price || '').length;
-
-  if (len >= 24) return 54;
-  if (len >= 21) return 60;
-  if (len >= 18) return 68;
-  if (len >= 15) return 78;
-  if (len >= 12) return 88;
-
-  return 102;
-}
-
-function fontSizeForNewTemplatePrice(price) {
-  const len = String(price || '').length;
-
-  if (len >= 12) return 76;
-  if (len >= 10) return 86;
-  if (len >= 8) return 98;
-
-  return 108;
 }
 
 function normalizeDiscount(value) {
@@ -330,127 +276,14 @@ function outputArgs(outPath) {
   ];
 }
 
-function buildElegantFilter(data, hasBanner) {
-  const duration = Number(data.duration || 8);
+function fontSizeForNewTemplatePrice(price) {
+  const len = String(price || '').length;
 
-  const bg = color(data.bg_color, '0x070707');
-  const primary = color(data.primary_color, '0xF2C94C');
-  const accent = color(data.accent_color, '0xB83232');
-  const text = color(data.text_color, 'white');
-  const muted = color(data.muted_color, '0xB8B8B8');
-  const panel = color(data.panel_color, '0x111111');
-  const softPanel = color(data.soft_panel_color, '0x181818');
+  if (len >= 12) return 76;
+  if (len >= 10) return 86;
+  if (len >= 8) return 98;
 
-  const brand = ffText(data.brand_name || 'ACHEI DA HORA', 34).toUpperCase();
-  const badge = ffText(data.brand_badge || 'OFERTA DO DIA', 28).toUpperCase();
-
-  const titleLines = splitTextLines(data.titulo || data.title || 'Achadinho selecionado', 35, 2)
-    .map(line => ffText(line, 42).toUpperCase());
-
-  const priceRaw = cleanText(data.preco || data.price || 'OFERTA ESPECIAL', 42).toUpperCase();
-  const price = ffText(priceRaw, 42);
-
-  const oldRaw = cleanText(data.preco_original_text || data.preco_original || '', 38).toUpperCase();
-  const old = ffText(oldRaw, 38).toUpperCase();
-
-  const discountRaw =
-    normalizeDiscount(
-      data.desconto ||
-      data.discount ||
-      data.desconto_text ||
-      data.discount_text ||
-      ''
-    ) || calculateDiscountText(oldRaw, priceRaw);
-
-  const discount = ffText(discountRaw, 24).toUpperCase();
-
-  const idNumber = ffText(extractId(data.comentario, data.produto_id), 14);
-  const priceFontSize = fontSizeForPrice(priceRaw);
-
-  const productH = hasBanner ? 770 : 830;
-  const productY = hasBanner ? 185 : 195;
-
-  const cardY = hasBanner ? 1005 : 1055;
-  const cardH = hasBanner ? 700 : 720;
-  const bannerY = 1755;
-  const bannerH = 165;
-
-  const cardDraws = [
-    `drawbox=x=56:y=${cardY}:w=968:h=${cardH}:color=${panel}@0.96:t=fill`,
-    `drawbox=x=56:y=${cardY}:w=968:h=${cardH}:color=white@0.08:t=2`,
-    `drawbox=x=96:y=${cardY + 42}:w=112:h=4:color=${primary}@1:t=fill`,
-  ];
-
-  if (titleLines[0]) {
-    cardDraws.push(
-      `drawtext=text='${titleLines[0]}':fontcolor=${text}:fontsize=34:x=96:y=${cardY + 70}:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none`
-    );
-  }
-
-  if (titleLines[1]) {
-    cardDraws.push(
-      `drawtext=text='${titleLines[1]}':fontcolor=${muted}:fontsize=30:x=96:y=${cardY + 116}:shadowcolor=black@0.60:shadowx=2:shadowy=2:expansion=none`
-    );
-  }
-
-  cardDraws.push(
-    `drawtext=text='PREÇO DE HOJE':fontcolor=${primary}:fontsize=36:x=96:y=${cardY + 188}:shadowcolor=black@0.65:shadowx=2:shadowy=2:expansion=none`
-  );
-
-  if (discount) {
-    cardDraws.push(
-      `drawbox=x=730:y=${cardY + 166}:w=238:h=68:color=${accent}@0.96:t=fill`,
-      `drawbox=x=730:y=${cardY + 166}:w=238:h=68:color=white@0.13:t=2`,
-      `drawtext=text='${discount}':fontcolor=white:fontsize=31:x=730+(238-text_w)/2:y=${cardY + 184}:shadowcolor=black@0.60:shadowx=2:shadowy=2:expansion=none`
-    );
-  } else {
-    cardDraws.push(
-      `drawbox=x=730:y=${cardY + 166}:w=238:h=68:color=${accent}@0.96:t=fill`,
-      `drawbox=x=730:y=${cardY + 166}:w=238:h=68:color=white@0.13:t=2`,
-      `drawtext=text='OFERTA':fontcolor=white:fontsize=31:x=730+(238-text_w)/2:y=${cardY + 184}:shadowcolor=black@0.60:shadowx=2:shadowy=2:expansion=none`
-    );
-  }
-
-  if (old) {
-    cardDraws.push(
-      `drawtext=text='${old}':fontcolor=${muted}:fontsize=31:x=(w-text_w)/2:y=${cardY + 270}:shadowcolor=black@0.65:shadowx=2:shadowy=2:expansion=none`
-    );
-  }
-
-  cardDraws.push(
-    `drawtext=text='${price}':fontcolor=${primary}:fontsize=${priceFontSize}:x=(w-text_w)/2:y=${cardY + 330}:shadowcolor=black@0.85:shadowx=3:shadowy=3:expansion=none`,
-    `drawtext=text='COMENTA':fontcolor=${text}:fontsize=42:x=(w-text_w)/2:y=${cardY + 462}:shadowcolor=black@0.80:shadowx=2:shadowy=2:expansion=none`,
-    `drawbox=x=230:y=${cardY + 522}:w=620:h=112:color=${primary}@1:t=fill`,
-    `drawtext=text='${idNumber}':fontcolor=black:fontsize=70:x=(w-text_w)/2:y=${cardY + 548}:expansion=none`,
-    `drawtext=text='QUE TE MANDO O LINK NO DIRECT':fontcolor=${text}:fontsize=34:x=(w-text_w)/2:y=${cardY + 655}:shadowcolor=black@0.78:shadowx=2:shadowy=2:expansion=none`
-  );
-
-  const filters = [
-    `color=c=${bg}:s=1080x1920:d=${duration},format=rgba[canvas]`,
-    `[0:v]scale=900:${productH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
-    hasBanner
-      ? `[1:v]scale=1080:${bannerH}:force_original_aspect_ratio=increase,crop=1080:${bannerH},format=rgba[banner]`
-      : null,
-    `[canvas]` +
-      `drawbox=x=0:y=0:w=1080:h=150:color=black@0.34:t=fill,` +
-      `drawtext=text='${brand}':fontcolor=${text}:fontsize=34:x=64:y=54:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none,` +
-      `drawbox=x=730:y=42:w=286:h=66:color=${primary}@1:t=fill,` +
-      `drawtext=text='${badge}':fontcolor=black:fontsize=30:x=730+(286-text_w)/2:y=61:expansion=none,` +
-      `drawbox=x=64:y=144:w=952:h=2:color=${primary}@0.55:t=fill,` +
-      `drawbox=x=64:y=${productY}:w=952:h=${productH + 40}:color=${softPanel}@0.88:t=fill,` +
-      `drawbox=x=64:y=${productY}:w=952:h=${productH + 40}:color=white@0.06:t=2,` +
-      `drawbox=x=94:y=${productY + 30}:w=892:h=${productH - 20}:color=black@0.18:t=fill[base1]`,
-    `[base1][prod]overlay=x=(W-w)/2:y=${productY}+20+(${productH}-h)/2:shortest=1[stage1]`,
-    `[stage1]${cardDraws.join(',')}[stage2]`,
-    `[stage2]` +
-      `drawtext=text='OFERTA VERIFICADA':fontcolor=${muted}:fontsize=26:x=64:y=${hasBanner ? 1714 : 1840}:expansion=none,` +
-      `drawtext=text='${brand}':fontcolor=${muted}:fontsize=26:x=w-text_w-64:y=${hasBanner ? 1714 : 1840}:expansion=none[stage3]`,
-    hasBanner
-      ? `[stage3][banner]overlay=0:${bannerY}:shortest=1,format=yuv420p[out]`
-      : `[stage3]format=yuv420p[out]`,
-  ].filter(Boolean);
-
-  return filters.join(';');
+  return 108;
 }
 
 function buildAcheiStoryFilter(data) {
@@ -459,11 +292,11 @@ function buildAcheiStoryFilter(data) {
   const productBoxW = 820;
   const productBoxH = 900;
 
-  const productMaxW = 820;
-  const productMaxH = 880;
+  const productMaxW = 810;
+  const productMaxH = 760;
 
   const rawTitle = cleanText(data.titulo || data.title || '', 80);
-  const titleLines = splitTextLines(rawTitle, 22, 2)
+  const titleLines = splitTextLines(rawTitle, 21, 2)
     .map(line => ffText(line, 42));
 
   const longestTitle = Math.max(...titleLines.map(line => line.length), 0);
@@ -473,7 +306,7 @@ function buildAcheiStoryFilter(data) {
     50;
 
   const titleX = 382;
-  const titleY = 1170;
+  const titleY = 1184;
   const titleGap = titleFontSize + 10;
 
   const priceRaw = cleanText(data.preco || data.price || '', 42);
@@ -505,9 +338,9 @@ function buildAcheiStoryFilter(data) {
 
   if (discountNum) {
     draws.push(
-      `drawtext=text='${discountNum}':fontcolor=black:fontsize=92:x=96:y=1182:expansion=none`,
-      `drawtext=text='%':fontcolor=black:fontsize=40:x=218:y=1194:expansion=none`,
-      `drawtext=text='OFF':fontcolor=black:fontsize=26:x=218:y=1240:expansion=none`
+      `drawtext=text='${discountNum}':fontcolor=black:fontsize=86:x=96:y=1172:expansion=none`,
+      `drawtext=text='%':fontcolor=black:fontsize=38:x=206:y=1182:expansion=none`,
+      `drawtext=text='OFF':fontcolor=black:fontsize=25:x=206:y=1226:expansion=none`
     );
   }
 
@@ -525,30 +358,30 @@ function buildAcheiStoryFilter(data) {
 
   if (oldPriceValue) {
     draws.push(
-      `drawtext=text='DE':fontcolor=white:fontsize=50:x=96:y=1340:expansion=none`,
-      `drawtext=text='R$ ${oldPriceValue}':fontcolor=white:fontsize=35:x=96:y=1402:expansion=none`
+      `drawtext=text='DE':fontcolor=white:fontsize=48:x=96:y=1340:expansion=none`,
+      `drawtext=text='R$ ${oldPriceValue}':fontcolor=white:fontsize=34:x=96:y=1400:expansion=none`
     );
   }
 
   if (priceNumber) {
     draws.push(
-      `drawtext=text='POR':fontcolor=white:fontsize=38:x=386:y=1336:expansion=none`,
-      `drawtext=text='R$':fontcolor=white:fontsize=62:x=386:y=1390:expansion=none`,
-      `drawtext=text='${priceNumber}':fontcolor=white:fontsize=${priceFontSize}:x=590:y=1334:expansion=none`
+      `drawtext=text='POR':fontcolor=white:fontsize=38:x=386:y=1334:expansion=none`,
+      `drawtext=text='R$':fontcolor=white:fontsize=60:x=386:y=1394:expansion=none`,
+      `drawtext=text='${priceNumber}':fontcolor=white:fontsize=${priceFontSize}:x=600:y=1336:expansion=none`
     );
   }
 
   draws.push(
-    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=44:x=255:y=1520:expansion=none`,
-    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=84:x=688+(150-text_w)/2:y=1492:expansion=none`,
-    `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=1630:expansion=none`
+    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=43:x=250:y=1514:expansion=none`,
+    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=78:x=688+(145-text_w)/2:y=1494:expansion=none`,
+    `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=35:x=(w-text_w)/2:y=1628:expansion=none`
   );
 
   return [
     `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,format=rgba[base]`,
     `[1:v]scale=${productMaxW}:${productMaxH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
     `[base]drawbox=x=${productBoxX}:y=${productBoxY}:w=${productBoxW}:h=${productBoxH}:color=white@1:t=fill[baseBox]`,
-    `[baseBox][prod]overlay=x=${productBoxX}+(${productBoxW}-w)/2:y=${productBoxY}+(${productBoxH}-h)/2:shortest=1[stage1]`,
+    `[baseBox][prod]overlay=x=${productBoxX}+(${productBoxW}-w)/2:y=${productBoxY}+(${productBoxH}-h)/2+30:shortest=1[stage1]`,
     `[stage1]${draws.join(',')},format=yuv420p[out]`,
   ].join(';');
 }
@@ -578,35 +411,7 @@ async function buildAcheiStoryReel(data, outPath) {
 }
 
 async function buildReel(data, outPath) {
-  if (data.layout === 'achei_story') {
-    return buildAcheiStoryReel(data, outPath);
-  }
-
-  const hasBanner = Boolean(data.brand_banner_url);
-  const filter = buildElegantFilter(data, hasBanner);
-
-  const args = [
-    '-y',
-    '-loop', '1',
-    '-t', String(data.duration),
-    '-i', data.image_url,
-  ];
-
-  if (hasBanner) {
-    args.push(
-      '-loop', '1',
-      '-t', String(data.duration),
-      '-i', data.brand_banner_url
-    );
-  }
-
-  args.push(
-    '-filter_complex', filter,
-    '-map', '[out]',
-    ...outputArgs(outPath)
-  );
-
-  await ffmpeg(args);
+  return buildAcheiStoryReel(data, outPath);
 }
 
 app.get('/health', (req, res) => {
@@ -644,7 +449,6 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       });
     }
 
-    const layout = cleanText(body.layout || 'elegant', 30);
     const imageUrl = normalizeUrl(body.image_url);
 
     if (!imageUrl) {
@@ -658,21 +462,11 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       });
     }
 
-    const bannerUrl = body.brand_banner_url
-      ? validateUrl(body.brand_banner_url, 'BRAND_BANNER_URL')
-      : '';
+    const layout = cleanText(body.layout || 'achei_story', 30);
 
-    const templateUrl = layout === 'achei_story'
-      ? (
-          body.template_url
-            ? validateUrl(body.template_url, 'TEMPLATE_URL')
-            : `${PUBLIC_BASE_URL}/assets/achei-story-base.png`
-        )
-      : (
-          body.template_url
-            ? validateUrl(body.template_url, 'TEMPLATE_URL')
-            : ''
-        );
+    const templateUrl = body.template_url
+      ? validateUrl(body.template_url, 'TEMPLATE_URL')
+      : `${PUBLIC_BASE_URL}/assets/achei-story-base.png`;
 
     const produtoId = safeId(body.produto_id);
     const duration = Math.max(6, Math.min(Number(body.duration || 8), 10));
@@ -685,24 +479,14 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       ...body,
       layout,
       image_url: imageUrl,
-      brand_banner_url: bannerUrl,
       template_url: templateUrl,
       produto_id: produtoId,
       duration,
       comentario: body.comentario || `ID ${produtoId}`,
-      brand_name: body.brand_name || 'ACHEI DA HORA',
-      brand_badge: body.brand_badge || 'OFERTA DO DIA',
-      bg_color: body.bg_color || '0x070707',
-      primary_color: body.primary_color || '0xF2C94C',
-      accent_color: body.accent_color || '0xB83232',
-      text_color: body.text_color || 'white',
-      muted_color: body.muted_color || '0xB8B8B8',
-      panel_color: body.panel_color || '0x111111',
-      soft_panel_color: body.soft_panel_color || '0x181818',
     };
 
     console.log(
-      `[create-reel] start layout=${layout} id=${produtoId} image_url=${imageUrl} template=${Boolean(data.template_url)} duration=${duration}`
+      `[create-reel] start layout=${layout} id=${produtoId} image_url=${imageUrl} duration=${duration}`
     );
 
     await buildReel(data, outPath);
