@@ -504,7 +504,7 @@ function buildAcheiStoryFilter(data) {
   // O template não extrai mais número/ID para desenhar na arte.
   // Ele desenha exatamente o texto que vem no campo "comentario".
   // Exemplo vindo do n8n: "Comente EU QUERO"
-  const comentarioTexto = ffText(data.comentario || 'Comente EU QUERO', 40).toUpperCase();
+  const comentarioTexto = ffText(data.comentario || 'Comenta EU QUERO', 40);
 
   const draws = [];
 
