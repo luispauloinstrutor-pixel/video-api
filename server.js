@@ -14,7 +14,7 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'ree
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
 const SERVICE_NAME = 'reels-engine-pro';
-const VERSION = '10.0.4';
+const VERSION = '10.1.0';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -65,6 +65,7 @@ function cleanText(value, max = 90) {
   return String(value || '')
     .replace(/\r?\n/g, ' ')
     .replace(/\s+/g, ' ')
+    .replace(/^=+/, '')
     .trim()
     .slice(0, max);
 }
@@ -99,7 +100,7 @@ function extractId(value, fallback) {
 const NAMED_COLOR_MAP = {
   yellow: '0xF2C94C',
   gold: '0xD8B45A',
-  red: '0xB83232',
+  red: '0xD71920',
   black: '0x070707',
   dark: '0x070707',
   white: 'white',
@@ -140,16 +141,14 @@ function fontSizeForPrice(price) {
   return 102;
 }
 
-function fontSizeForAcheiStoryPrice(price) {
+function fontSizeForNewTemplatePrice(price) {
   const len = String(price || '').length;
 
-  if (len >= 24) return 70;
-  if (len >= 21) return 78;
-  if (len >= 18) return 86;
-  if (len >= 15) return 94;
-  if (len >= 12) return 104;
+  if (len >= 12) return 78;
+  if (len >= 10) return 88;
+  if (len >= 8) return 102;
 
-  return 114;
+  return 112;
 }
 
 function normalizeDiscount(value) {
@@ -174,6 +173,12 @@ function normalizeDiscount(value) {
   }
 
   return raw;
+}
+
+function discountNumber(value) {
+  const raw = normalizeDiscount(value);
+  const m = raw.match(/(\d{1,3})/);
+  return m ? m[1] : '';
 }
 
 function parseMoneyBR(value) {
@@ -208,6 +213,30 @@ function calculateDiscountText(oldPriceText, newPriceText) {
   if (percentage <= 0 || percentage > 99) return '';
 
   return `${percentage}% OFF`;
+}
+
+function normalizeOldPriceText(value) {
+  const raw = cleanText(value || '', 40).toUpperCase();
+
+  if (!raw) return '';
+
+  if (raw.startsWith('DE ')) return raw;
+  if (raw.startsWith('R$')) return `DE ${raw}`;
+
+  return raw;
+}
+
+function normalizeCurrentPriceNumber(value) {
+  let raw = cleanText(value || '', 42).toUpperCase();
+
+  raw = raw
+    .replace(/^POR\s*/i, '')
+    .replace(/^R\$\s*/i, '')
+    .trim();
+
+  const m = raw.match(/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d+)/);
+
+  return m ? m[1] : raw;
 }
 
 function splitTextLines(value, maxChars = 34, maxLines = 2) {
@@ -448,19 +477,22 @@ function buildElegantFilter(data, hasBanner) {
 }
 
 function buildAcheiStoryFilter(data) {
-  const productBoxX = 216;
-  const productBoxY = 426;
-  const productBoxW = 648;
-  const productBoxH = 610;
+  const productBoxX = 128;
+  const productBoxY = 235;
+  const productBoxW = 824;
+  const productBoxH = 905;
 
-  const titleLines = splitTextLines(data.titulo || data.title || '', 24, 2)
-    .map(line => ffText(line, 32).toUpperCase());
+  const rawTitle = cleanText(data.titulo || data.title || '', 70).toUpperCase();
+  const titleLines = splitTextLines(rawTitle, 23, 2)
+    .map(line => ffText(line, 40).toUpperCase());
 
   const priceRaw = cleanText(data.preco || data.price || '', 42);
-  const price = ffText(priceRaw, 42);
+  const priceNumberRaw = normalizeCurrentPriceNumber(priceRaw);
+  const priceNumber = ffText(priceNumberRaw, 20);
+  const priceFontSize = fontSizeForNewTemplatePrice(priceNumberRaw);
 
-  const oldRaw = cleanText(data.preco_original_text || data.preco_original || '', 38).toUpperCase();
-  const oldPrice = ffText(oldRaw, 38).toUpperCase();
+  const oldRaw = normalizeOldPriceText(data.preco_original_text || data.preco_original || '');
+  const oldPrice = ffText(oldRaw, 34).toUpperCase();
 
   const discountRaw =
     normalizeDiscount(
@@ -471,44 +503,52 @@ function buildAcheiStoryFilter(data) {
       ''
     ) || calculateDiscountText(oldRaw, priceRaw);
 
-  const discount = ffText(discountRaw, 24).toUpperCase();
+  const discountNum = ffText(discountNumber(discountRaw), 4);
   const idNumber = ffText(extractId(data.comentario, data.produto_id), 14);
 
-  const priceFontSize = fontSizeForAcheiStoryPrice(priceRaw);
   const draws = [];
 
-  if (discount) {
+  if (discountNum) {
     draws.push(
-      `drawtext=text='${discount}':fontcolor=black:fontsize=52:x=96+(318-text_w)/2:y=1108:expansion=none`
+      `drawtext=text='${discountNum}':fontcolor=black:fontsize=104:x=116:y=1190:shadowcolor=black@0.15:shadowx=1:shadowy=1:expansion=none`,
+      `drawtext=text='%':fontcolor=black:fontsize=52:x=240:y=1202:expansion=none`,
+      `drawtext=text='OFF':fontcolor=black:fontsize=31:x=240:y=1260:expansion=none`
     );
   }
 
   if (titleLines[0]) {
     draws.push(
-      `drawtext=text='${titleLines[0]}':fontcolor=white:fontsize=39:x=443:y=1088:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none`
+      `drawtext=text='${titleLines[0]}':fontcolor=white:fontsize=35:x=405:y=1202:shadowcolor=black@0.60:shadowx=2:shadowy=2:expansion=none`
     );
   }
 
   if (titleLines[1]) {
+    const secondLineSize = titleLines[1].length > 18 ? 43 : 52;
+
     draws.push(
-      `drawtext=text='${titleLines[1]}':fontcolor=white:fontsize=39:x=443:y=1132:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none`
+      `drawtext=text='${titleLines[1]}':fontcolor=0xFFD000:fontsize=${secondLineSize}:x=405:y=1250:shadowcolor=black@0.62:shadowx=2:shadowy=2:expansion=none`
     );
   }
 
   if (oldPrice) {
     draws.push(
-      `drawtext=text='${oldPrice}':fontcolor=white:fontsize=44:x=178:y=1218:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none`
+      `drawtext=text='${oldPrice}':fontcolor=white:fontsize=34:x=112:y=1385:shadowcolor=black@0.55:shadowx=2:shadowy=2:expansion=none`,
+      `drawbox=x=190:y=1407:w=145:h=4:color=red@0.95:t=fill`
     );
   }
 
-  if (price) {
+  if (priceNumber) {
     draws.push(
-      `drawtext=text='${price}':fontcolor=0xFFE600:fontsize=${priceFontSize}:x=(w-text_w)/2:y=1290:shadowcolor=black@0.85:shadowx=3:shadowy=3:expansion=none`
+      `drawtext=text='POR':fontcolor=white:fontsize=42:x=405:y=1350:shadowcolor=black@0.65:shadowx=2:shadowy=2:expansion=none`,
+      `drawtext=text='R$':fontcolor=white:fontsize=58:x=405:y=1412:shadowcolor=black@0.65:shadowx=2:shadowy=2:expansion=none`,
+      `drawtext=text='${priceNumber}':fontcolor=0xFFD000:fontsize=${priceFontSize}:x=548:y=1344:shadowcolor=black@0.82:shadowx=3:shadowy=3:expansion=none`
     );
   }
 
   draws.push(
-    `drawtext=text='${idNumber}':fontcolor=black:fontsize=92:x=655+(160-text_w)/2:y=1442:expansion=none`
+    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=40:x=300:y=1528:shadowcolor=white@0.10:shadowx=1:shadowy=1:expansion=none`,
+    `drawtext=text='${idNumber}':fontcolor=0xD71920:fontsize=86:x=680+(120-text_w)/2:y=1496:shadowcolor=black@0.20:shadowx=1:shadowy=1:expansion=none`,
+    `drawtext=text='QUE TE MANDA O LINK':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=1618:shadowcolor=black@0.70:shadowx=2:shadowy=2:expansion=none`
   );
 
   return [
