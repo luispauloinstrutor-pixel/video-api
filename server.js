@@ -499,7 +499,12 @@ function buildAcheiStoryFilter(data) {
     ) || calculateDiscountText(oldRaw, priceRaw);
 
   const discountNum = ffText(discountNumber(discountRaw), 4);
-  const idNumber = ffText(extractId(data.comentario, data.produto_id), 14);
+
+  // Aqui está a mudança principal:
+  // O template não extrai mais número/ID para desenhar na arte.
+  // Ele desenha exatamente o texto que vem no campo "comentario".
+  // Exemplo vindo do n8n: "Comente EU QUERO"
+  const comentarioTexto = ffText(data.comentario || 'Comente EU QUERO', 40).toUpperCase();
 
   const draws = [];
 
@@ -539,7 +544,7 @@ function buildAcheiStoryFilter(data) {
   }
 
   draws.push(
-    `drawtext=text='${comentarioTexto}':fontcolor=black:fontsize=44:x=255:y=1533:expansion=none`,
+    `drawtext=text='${comentarioTexto}':fontcolor=black:fontsize=44:x=(w-text_w)/2:y=1533:expansion=none`,
     `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=1625:expansion=none`
   );
 
@@ -688,7 +693,7 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       template_url: templateUrl,
       produto_id: produtoId,
       duration,
-      comentario: body.comentario || `ID ${produtoId}`,
+      comentario: body.comentario || 'Comente EU QUERO',
       brand_name: body.brand_name || 'ACHEI DA HORA',
       brand_badge: body.brand_badge || 'OFERTA DO DIA',
       bg_color: body.bg_color || '0x070707',
