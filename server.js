@@ -539,7 +539,7 @@ function buildAcheiStoryFilter(data) {
   }
 
   draws.push(
-    `drawtext=text='Comenta ${comentarioTexto}':fontcolor=black:fontsize=44:x=255:y=1533:expansion=none`,
+    `drawtext=text='${comentarioTexto}':fontcolor=black:fontsize=44:x=255:y=1533:expansion=none`,
     `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=1625:expansion=none`
   );
 
