@@ -539,8 +539,8 @@ function buildAcheiStoryFilter(data) {
   }
 
   draws.push(
-    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=44:x=255:y=1520:expansion=none`,
-    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=84:x=688+(150-text_w)/2:y=1492:expansion=none`,
+    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=44:x=255:y=1525:expansion=none`,
+    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=84:x=688+(150-text_w)/2:y=1512:expansion=none`,
     `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=1630:expansion=none`
   );
 
