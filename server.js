@@ -533,15 +533,15 @@ function buildAcheiStoryFilter(data) {
   if (priceNumber) {
     draws.push(
       `drawtext=text='POR':fontcolor=white:fontsize=38:x=386:y=1336:expansion=none`,
-      `drawtext=text='R$':fontcolor=white:fontsize=62:x=386:y=1390:expansion=none`,
+      `drawtext=text='R$':fontcolor=white:fontsize=62:x=386:y=1395:expansion=none`,
       `drawtext=text='${priceNumber}':fontcolor=white:fontsize=${priceFontSize}:x=590:y=1334:expansion=none`
     );
   }
 
   draws.push(
-    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=44:x=255:y=1525:expansion=none`,
-    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=84:x=688+(150-text_w)/2:y=1512:expansion=none`,
-    `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=1630:expansion=none`
+    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=44:x=255:y=1530:expansion=none`,
+    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=84:x=688+(150-text_w)/2:y=1517:expansion=none`,
+    `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=1627:expansion=none`
   );
 
   return [
