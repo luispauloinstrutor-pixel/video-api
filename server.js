@@ -14,7 +14,7 @@ const OUTPUT_DIR = process.env.OUTPUT_DIR || path.join(__dirname, 'public', 'ree
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
 
 const SERVICE_NAME = 'reels-engine-pro';
-const VERSION = '10.1.4';
+const VERSION = '10.1.5';
 
 const FFMPEG_TIMEOUT_MS = Number(process.env.FFMPEG_TIMEOUT_MS || 120000);
 const MAX_FFMPEG_JOBS = Number(process.env.MAX_FFMPEG_JOBS || 1);
@@ -454,21 +454,37 @@ function buildElegantFilter(data, hasBanner) {
 }
 
 function buildAcheiStoryFilter(data) {
-  const productMaxW = 760;
-  const productMaxH = 650;
-  const productY = 285;
+  const productBoxX = 130;
+  const productBoxY = 235;
+  const productBoxW = 820;
+  const productBoxH = 900;
 
-  const rawTitle = cleanText(data.titulo || data.title || '', 70).toUpperCase();
-  const titleLines = splitTextLines(rawTitle, 19, 2)
-    .map(line => ffText(line, 34).toUpperCase());
+  const productMaxW = 820;
+  const productMaxH = 880;
 
-  const firstTitleSize = titleLines[0] && titleLines[0].length > 16 ? 25 : 29;
-  const secondTitleSize = titleLines[1] && titleLines[1].length > 12 ? 30 : 36;
+  const rawTitle = cleanText(data.titulo || data.title || '', 80);
+  const titleLines = splitTextLines(rawTitle, 22, 2)
+    .map(line => ffText(line, 42));
+
+  const longestTitle = Math.max(...titleLines.map(line => line.length), 0);
+  const titleFontSize =
+    longestTitle > 20 ? 40 :
+    longestTitle > 16 ? 45 :
+    50;
+
+  const titleX = 382;
+  const titleY = 1170;
+  const titleGap = titleFontSize + 10;
 
   const priceRaw = cleanText(data.preco || data.price || '', 42);
   const priceNumberRaw = normalizeCurrentPriceNumber(priceRaw);
   const priceNumber = ffText(priceNumberRaw, 20);
-  const priceFontSize = fontSizeForNewTemplatePrice(priceNumberRaw);
+
+  let priceFontSize = fontSizeForNewTemplatePrice(priceNumberRaw);
+  if (priceNumberRaw.length >= 10) priceFontSize = 82;
+  else if (priceNumberRaw.length >= 9) priceFontSize = 88;
+  else if (priceNumberRaw.length >= 8) priceFontSize = 96;
+  else priceFontSize = 104;
 
   const oldRaw = normalizeOldPriceText(data.preco_original_text || data.preco_original || '');
   const oldPriceValue = ffText(normalizeOldPriceValue(oldRaw), 24).toUpperCase();
@@ -489,49 +505,50 @@ function buildAcheiStoryFilter(data) {
 
   if (discountNum) {
     draws.push(
-      `drawtext=text='${discountNum}':fontcolor=black:fontsize=92:x=88:y=1138:expansion=none`,
-      `drawtext=text='%':fontcolor=black:fontsize=38:x=202:y=1150:expansion=none`,
-      `drawtext=text='OFF':fontcolor=black:fontsize=25:x=202:y=1192:expansion=none`
+      `drawtext=text='${discountNum}':fontcolor=black:fontsize=92:x=96:y=1182:expansion=none`,
+      `drawtext=text='%':fontcolor=black:fontsize=40:x=218:y=1194:expansion=none`,
+      `drawtext=text='OFF':fontcolor=black:fontsize=26:x=218:y=1240:expansion=none`
     );
   }
 
   if (titleLines[0]) {
     draws.push(
-      `drawtext=text='${titleLines[0]}':fontcolor=black:fontsize=${firstTitleSize}:x=350:y=1120:expansion=none`
+      `drawtext=text='${titleLines[0]}':fontcolor=black:fontsize=${titleFontSize}:x=${titleX}:y=${titleY}:expansion=none`
     );
   }
 
   if (titleLines[1]) {
     draws.push(
-      `drawtext=text='${titleLines[1]}':fontcolor=black:fontsize=${secondTitleSize}:x=350:y=1162:expansion=none`
+      `drawtext=text='${titleLines[1]}':fontcolor=black:fontsize=${titleFontSize}:x=${titleX}:y=${titleY + titleGap}:expansion=none`
     );
   }
 
   if (oldPriceValue) {
     draws.push(
-      `drawtext=text='DE':fontcolor=white:fontsize=32:x=96:y=1270:expansion=none`,
-      `drawtext=text='R$ ${oldPriceValue}':fontcolor=white:fontsize=32:x=96:y=1316:expansion=none`
+      `drawtext=text='DE':fontcolor=white:fontsize=50:x=96:y=1340:expansion=none`,
+      `drawtext=text='R$ ${oldPriceValue}':fontcolor=white:fontsize=35:x=96:y=1402:expansion=none`
     );
   }
 
   if (priceNumber) {
     draws.push(
-      `drawtext=text='POR':fontcolor=white:fontsize=38:x=386:y=1252:expansion=none`,
-      `drawtext=text='R$':fontcolor=white:fontsize=54:x=386:y=1322:expansion=none`,
-      `drawtext=text='${priceNumber}':fontcolor=0xFFD000:fontsize=${priceFontSize}:x=535:y=1242:expansion=none`
+      `drawtext=text='POR':fontcolor=white:fontsize=38:x=386:y=1336:expansion=none`,
+      `drawtext=text='R$':fontcolor=white:fontsize=62:x=386:y=1390:expansion=none`,
+      `drawtext=text='${priceNumber}':fontcolor=white:fontsize=${priceFontSize}:x=590:y=1334:expansion=none`
     );
   }
 
   draws.push(
-    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=38:x=276:y=1437:expansion=none`,
-    `drawtext=text='${idNumber}':fontcolor=0xD71920:fontsize=78:x=688+(140-text_w)/2:y=1408:expansion=none`,
-    `drawtext=text='QUE TE MANDA O LINK':fontcolor=white:fontsize=34:x=(w-text_w)/2:y=1518:expansion=none`
+    `drawtext=text='COMENTA O Nº':fontcolor=black:fontsize=44:x=255:y=1520:expansion=none`,
+    `drawtext=text='${idNumber}':fontcolor=0xFF0000:fontsize=84:x=688+(150-text_w)/2:y=1492:expansion=none`,
+    `drawtext=text='QUE TE MANDO O LINK':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=1630:expansion=none`
   );
 
   return [
     `[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,format=rgba[base]`,
     `[1:v]scale=${productMaxW}:${productMaxH}:force_original_aspect_ratio=decrease,format=rgba[prod]`,
-    `[base][prod]overlay=x=(W-w)/2:y=${productY}:shortest=1[stage1]`,
+    `[base]drawbox=x=${productBoxX}:y=${productBoxY}:w=${productBoxW}:h=${productBoxH}:color=white@1:t=fill[baseBox]`,
+    `[baseBox][prod]overlay=x=${productBoxX}+(${productBoxW}-w)/2:y=${productBoxY}+(${productBoxH}-h)/2:shortest=1[stage1]`,
     `[stage1]${draws.join(',')},format=yuv420p[out]`,
   ].join(';');
 }
