@@ -534,7 +534,7 @@ function buildAcheiStoryFilter(data) {
     draws.push(
       `drawtext=text='POR':fontcolor=white:fontsize=45:x=397:y=1336:expansion=none`,
       `drawtext=text='R$':fontcolor=white:fontsize=62:x=397:y=1395:expansion=none`,
-      `drawtext=text='${priceNumber}':fontcolor=white:fontsize=${priceFontSize}:x=590:y=1348:expansion=none`
+      `drawtext=text='${priceNumber}':fontcolor=white:fontsize=${priceFontSize}:x=570:y=1348:expansion=none`
     );
   }
 
