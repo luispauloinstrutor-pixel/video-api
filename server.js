@@ -693,7 +693,7 @@ app.post('/create-reel', requireApiKey, async (req, res) => {
       template_url: templateUrl,
       produto_id: produtoId,
       duration,
-      comentario: body.comentario || 'Comente EU QUERO',
+      comentario: body.comentario || 'Comenta EU QUERO',
       brand_name: body.brand_name || 'ACHEI DA HORA',
       brand_badge: body.brand_badge || 'OFERTA DO DIA',
       bg_color: body.bg_color || '0x070707',
