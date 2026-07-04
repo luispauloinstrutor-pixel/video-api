@@ -560,10 +560,7 @@ function buildAcheiStoryFilter(data) {
 async function buildAcheiStoryReel(data, outPath) {
   const filter = buildAcheiStoryFilter(data);
 
-  const localTemplatePath = path.join(ASSETS_DIR, 'achei-story-base.png');
-  const templateInput = fs.existsSync(localTemplatePath)
-    ? localTemplatePath
-    : data.template_url;
+const templateInput = data.template_url;
 
   const args = [
     '-y',
