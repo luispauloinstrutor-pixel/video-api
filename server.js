@@ -560,7 +560,7 @@ function buildAcheiStoryFilter(data) {
 async function buildAcheiStoryReel(data, outPath) {
   const filter = buildAcheiStoryFilter(data);
 
-const templateInput = data.template_url;
+  const templateInput = data.template_url;
 
   const args = [
     '-y',
