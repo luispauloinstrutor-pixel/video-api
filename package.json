@@ -1,7 +1,7 @@
 {
   "name": "reels-engine-pro-v4",
   "version": "4.0.0",
-  "description": "Reels Engine profissional com layout limpo, CTA COMENTE ID e visual menos amador.",
+  "description": "Reels Engine profissional para ofertas com layout configurável e CTA de comentário.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
