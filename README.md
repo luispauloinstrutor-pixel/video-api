@@ -1,3 +1,4 @@
+```json
 {
   "layout": "achei_story",
   "template_url": "https://luis-paulo-video-api.hukiei.easypanel.host/assets/achei-story-base.png",
@@ -17,3 +18,4 @@
   "text_color": "white",
   "duration": 8
 }
+```
