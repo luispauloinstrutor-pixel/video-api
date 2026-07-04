@@ -511,8 +511,8 @@ function buildAcheiStoryFilter(data) {
   if (discountNum) {
     draws.push(
       `drawtext=text='${discountNum}':fontcolor=black:fontsize=92:x=105:y=1182:expansion=none`,
-      `drawtext=text='%':fontcolor=black:fontsize=40:x=227:y=1194:expansion=none`,
-      `drawtext=text='OFF':fontcolor=black:fontsize=26:x=227:y=1240:expansion=none`
+      `drawtext=text='%':fontcolor=black:fontsize=44:x=227:y=1192:borderw=1:bordercolor=black:expansion=none`,
+      `drawtext=text='OFF':fontcolor=black:fontsize=30:x=227:y=1238:borderw=1:bordercolor=black:expansion=none`
     );
   }
 
